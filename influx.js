@@ -14,7 +14,9 @@ function tableFor(name) {
             value: Influx.FieldType.FLOAT
         },
         tags: [
-            'mission'
+            'mission',
+            'id',
+            'arity'
         ]
     };
 }

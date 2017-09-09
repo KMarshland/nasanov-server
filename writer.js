@@ -23,8 +23,11 @@ function handleMessage(message, ws) {
     console.log('nasanov-writer receive');
 
     const data = JSON.parse(message);
+
     const timestamp = new Date(data.timestamp);
     const mission = data.mission;
+    const id = data.id;
+    const arity = Object.keys(data).length;
 
     let points = [];
 
@@ -40,7 +43,9 @@ function handleMessage(message, ws) {
         points.push({
             measurement: key,
             tags: {
-                mission: mission
+                mission: mission,
+                id: id,
+                arity: arity
             },
             fields: {
                 value: data[key]
@@ -53,7 +58,7 @@ function handleMessage(message, ws) {
         console.error(`Error saving data to InfluxDB! ${err.stack}`)
     }).then(function () {
         // send a confirmation that we stored the message with that id
-        ws.send(data.id)
+        ws.send(id)
     });
 
 }

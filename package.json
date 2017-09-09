@@ -9,14 +9,13 @@
     "reader": "MODE=reader PORT=5250 node main.js",
     "tester": "node test.js",
     "test": "NASANOV_SECRET=yikes foreman start -f Procfile.dev",
-    "influx": "docker run -p 8086:8086 -v $PWD:/var/lib/influxdb influxdb"
+    "influx": "influxd"
   },
   "repository": "https://github.com/KMarshland/nasanov-server.git",
   "author": "Kai Marshland <kaimarshland@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "influx": "^5.0.7",
-    "influx-subscriber": "https://github.com/KMarshland/influx-subscriber",
     "node-uuid": "^1.4.8",
     "ws": "^3.1.0"
   }

@@ -111,6 +111,10 @@ function randomTransmission() {
     return {
         timestamp: new Date().valueOf(),
         altitude: randomInRange(0, 25000),
+        latitude: randomInRange(90, 90),
+        longitude: randomInRange(-180, 180),
+
+        mission: '51',
         id: uuid.v4()
     }
 }
