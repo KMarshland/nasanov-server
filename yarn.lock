@@ -161,9 +161,9 @@ influx-line-protocol-parser@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/influx-line-protocol-parser/-/influx-line-protocol-parser-0.2.0.tgz#46d18a549dda74c150731436231ca5220e4ce688"
 
-influx-subscriber@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/influx-subscriber/-/influx-subscriber-0.3.0.tgz#4bc606a51ab10237bbcb1e26757611383612e10d"
+"influx-subscriber@https://github.com/KMarshland/influx-subscriber":
+  version "0.2.1"
+  resolved "https://github.com/KMarshland/influx-subscriber#0d721f84328d18757b2fc0f3629f5a471396a6bd"
   dependencies:
     commander "^2.9.0"
     debug "^2.2.0"
