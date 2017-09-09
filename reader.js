@@ -76,7 +76,7 @@ function handlePoint(dataBuffer) {
     if (!data) {
         data = {
             id: id,
-            mission: mission,
+            mission: parseInt(mission),
             timestamp: timestamp
         };
         pointBuffer[id] = data;

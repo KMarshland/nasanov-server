@@ -131,7 +131,7 @@ function randomTransmission() {
         // latitude: randomInRange(90, 90),
         // longitude: randomInRange(-180, 180),
 
-        mission: '51',
+        mission: 1,
         id: uuid.v4()
     };
 
