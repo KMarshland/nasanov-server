@@ -18,6 +18,16 @@ function init(wss) {
     // listen for client connections
     wss.on('connection', function (ws) {
         clients.push(ws);
+
+        // remove the client on close
+        ws.on('close', function () {
+            let index = clients.indexOf(ws);
+            if (index == -1){
+                return;
+            }
+
+            clients = clients.splice(index, 1);
+        });
     });
 
     // listen for new data

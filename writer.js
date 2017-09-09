@@ -1,6 +1,8 @@
 const validate = require('./validate.js');
 const influxConnection = require('./influx.js');
 
+const HEARTBEAT_INTERVAL = 5000;
+
 function init(wss) {
     console.log('Initializing nasanov-writer');
 
@@ -15,6 +17,14 @@ function init(wss) {
 
         ws.on('message', function (message) {
             handleMessage(message, ws);
+        });
+
+        const interval = setInterval(function () {
+            ws.send(new Date().valueOf());
+        }, HEARTBEAT_INTERVAL)
+
+        ws.on('close', function () {
+            clearInterval(interval);
         });
     });
 }
