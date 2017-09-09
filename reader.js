@@ -1,3 +1,5 @@
+const WebSocket = require('ws');
+
 const influxConnection = require('./influx.js');
 const dgram = require('dgram');
 const { StringDecoder } = require('string_decoder');
@@ -8,27 +10,13 @@ const PORT = 9090;
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
 
-let clients = [];
+let WSS;
 
 let pointBuffer = {};
 
 function init(wss) {
+    WSS = wss;
     console.log('Initializing nasanov-reader');
-
-    // listen for client connections
-    wss.on('connection', function (ws) {
-        clients.push(ws);
-
-        // remove the client on close
-        ws.on('close', function () {
-            let index = clients.indexOf(ws);
-            if (index == -1){
-                return;
-            }
-
-            clients = clients.splice(index, 1);
-        });
-    });
 
     // listen for new data
     configureInflux().then(function () {
@@ -105,9 +93,13 @@ function handlePoint(dataBuffer) {
 
     console.log('nasanov-reader full point');
 
-    clients.map(function (client) {
+    WSS.clients.forEach(function each(client) {
+        if (client.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
         client.send(JSON.stringify(data));
-    })
+    });
 }
 
 /*

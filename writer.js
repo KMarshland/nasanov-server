@@ -1,3 +1,5 @@
+const WebSocket = require('ws');
+
 const validate = require('./validate.js');
 const influxConnection = require('./influx.js');
 
@@ -20,8 +22,12 @@ function init(wss) {
         });
 
         const interval = setInterval(function () {
+            if (ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
             ws.send(new Date().valueOf());
-        }, HEARTBEAT_INTERVAL)
+        }, HEARTBEAT_INTERVAL);
 
         ws.on('close', function () {
             clearInterval(interval);
@@ -68,6 +74,10 @@ function handleMessage(message, ws) {
         influx.writePoints(points).catch(err => {
             console.error(`Error saving data to InfluxDB! ${err.stack}`)
         }).then(function () {
+            if (ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
             // send a confirmation that we stored the message with that id
             ws.send(id)
         });
