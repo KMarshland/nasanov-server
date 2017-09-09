@@ -4,6 +4,8 @@ const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
 
 const WebSocket = require('ws');
+const uuid = require('node-uuid');
+
 const validate = require('./validate.js');
 
 let sentTransmissions = {};
@@ -107,7 +109,9 @@ function endTest(){
  */
 function randomTransmission() {
     return {
-        altitude: randomInRange(0, 25000)
+        timestamp: new Date().valueOf(),
+        altitude: randomInRange(0, 25000),
+        id: uuid.v4()
     }
 }
 
