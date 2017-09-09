@@ -1,0 +1,9 @@
+{
+  "name": "nasonov-server",
+  "version": "1.0.0",
+  "description": "Servers for ingesting and distributing rf transmissions",
+  "main": "index.js",
+  "repository": "https://github.com/KMarshland/nasanov-server.git",
+  "author": "Kai Marshland <kaimarshland@gmail.com>",
+  "license": "MIT"
+}
