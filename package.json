@@ -14,6 +14,7 @@
   "author": "Kai Marshland <kaimarshland@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "influx": "^5.0.7",
     "influx-subscriber": "^0.3.0",
     "ws": "^3.1.0"
   }

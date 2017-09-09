@@ -4,45 +4,59 @@ const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
 
 const WebSocket = require('ws');
-
 const validate = require('./validate.js');
-const timestamp = new Date().valueOf();
-const signature = validate.sign(timestamp);
-
-const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
-const readerSocket = new WebSocket('ws://localhost:5250');
 
 let sentTransmissions = {};
 let receivedTransmissions = {};
 
+initilizeWriter();
+initializeReader();
 
-writerSocket.on('open', function open() {
-    const start = new Date().valueOf();
-    send();
+function initilizeWriter() {
+    const timestamp = new Date().valueOf();
+    const signature = validate.sign(timestamp);
+    const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
 
-    function send() {
-        console.log('nasanov-client send');
-
-        let transmission = JSON.stringify(randomTransmission());
-        sentTransmissions[transmission] = new Date().valueOf();
-
-        writerSocket.send(transmission);
-
-        const elapsedMS = new Date().valueOf() - start;
-        if (elapsedMS / 1000 > DURATION) {
-            setTimeout(endTest, ACCEPTABLE_LATENCY);
-            return;
-        }
-
-        setTimeout(send, 1000/RATE);
-    }
-});
-
-readerSocket.on('open', function open() {
-    readerSocket.on('message', function (transmission) {
-        receivedTransmissions[transmission] = new Date().valueOf();
+    writerSocket.on('error', function () {
+        setTimeout(initilizeWriter, 500);
     });
-});
+
+    writerSocket.on('open', function open() {
+        const start = new Date().valueOf();
+        send();
+
+        function send() {
+            console.log('nasanov-client send');
+
+            let transmission = JSON.stringify(randomTransmission());
+            sentTransmissions[transmission] = new Date().valueOf();
+
+            writerSocket.send(transmission);
+
+            const elapsedMS = new Date().valueOf() - start;
+            if (elapsedMS / 1000 > DURATION) {
+                setTimeout(endTest, ACCEPTABLE_LATENCY);
+                return;
+            }
+
+            setTimeout(send, 1000 / RATE);
+        }
+    });
+}
+
+function initializeReader() {
+    const readerSocket = new WebSocket('ws://localhost:5250');
+
+    readerSocket.on('error', function () {
+        setTimeout(initializeReader, 500);
+    });
+
+    readerSocket.on('open', function open() {
+        readerSocket.on('message', function (transmission) {
+            receivedTransmissions[transmission] = new Date().valueOf();
+        });
+    });
+}
 
 /*
  * Analyzes results then terminates test
@@ -88,12 +102,18 @@ function endTest(){
     }
 }
 
+/*
+ * Creates a random transmission
+ */
 function randomTransmission() {
     return {
         altitude: randomInRange(0, 25000)
     }
 }
 
+/*
+ * Returns a random number within a range
+ */
 function randomInRange(min, max) {
     return Math.random() * (max - min) + min;
 }

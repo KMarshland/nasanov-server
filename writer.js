@@ -1,4 +1,5 @@
 const validate = require('./validate.js');
+const influx = require('./influx.js');
 
 function init(wss) {
     console.log('Initializing nasanov-writer');

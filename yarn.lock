@@ -178,6 +178,10 @@ influx@^4.2.1:
     lodash "^4.11.1"
     request "2.x"
 
+influx@^5.0.7:
+  version "5.0.7"
+  resolved "https://registry.yarnpkg.com/influx/-/influx-5.0.7.tgz#35e65f6bf13cbaa1763108b5596a806a727a529a"
+
 is-typedarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/is-typedarray/-/is-typedarray-1.0.0.tgz#e479c80858df0c1b11ddda6940f96011fcda4a9a"
