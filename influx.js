@@ -34,4 +34,6 @@ influx.getDatabaseNames()
         }
     });
 
+influx.DATABASE_NAME = DATABASE_NAME;
+
 module.exports = influx;

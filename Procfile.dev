@@ -1,4 +1,4 @@
-influx: docker run -p 8086:8086 -v $PWD:/var/lib/influxdb influxdb
+influx: npm run influx
 reader: npm run reader
 writer: npm run writer
 tester: npm run tester
