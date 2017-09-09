@@ -1,0 +1,3 @@
+reader: npm run reader
+writer: npm run writer
+tester: npm run tester

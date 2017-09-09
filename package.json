@@ -5,13 +5,16 @@
   "description": "Servers for ingesting and distributing rf transmissions",
   "main": "main.js",
   "scripts": {
-    "reader": "MODE=reader node main.js",
-    "writer": "MODE=writer node main.js"
+    "reader": "MODE=reader PORT=5250 node main.js",
+    "writer": "MODE=writer PORT=5240 node main.js",
+    "tester": "node test.js",
+    "test": "foreman start -f Procfile.dev"
   },
   "repository": "https://github.com/KMarshland/nasanov-server.git",
   "author": "Kai Marshland <kaimarshland@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "influx-subscriber": "^0.3.0",
     "ws": "^3.1.0"
   }
 }
