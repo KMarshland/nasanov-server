@@ -1,5 +1,5 @@
 const validate = require('./validate.js');
-const influx = require('./influx.js');
+const influxConnection = require('./influx.js');
 
 function init(wss) {
     console.log('Initializing nasanov-writer');
@@ -54,11 +54,13 @@ function handleMessage(message, ws) {
         });
     }
 
-    influx.writePoints(points).catch(err => {
-        console.error(`Error saving data to InfluxDB! ${err.stack}`)
-    }).then(function () {
-        // send a confirmation that we stored the message with that id
-        ws.send(id)
+    influxConnection.then(function (influx) {
+        influx.writePoints(points).catch(err => {
+            console.error(`Error saving data to InfluxDB! ${err.stack}`)
+        }).then(function () {
+            // send a confirmation that we stored the message with that id
+            ws.send(id)
+        });
     });
 
 }

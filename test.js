@@ -1,5 +1,5 @@
 
-const RATE = 100; // in requests per second
+const RATE = 500; // in requests per second
 const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
 const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
@@ -126,9 +126,10 @@ function endTest(){
 function randomTransmission() {
     let data = {
         timestamp: new Date().valueOf(),
-        altitude: randomInRange(0, 25000),
-        latitude: randomInRange(90, 90),
-        longitude: randomInRange(-180, 180),
+
+        // altitude: randomInRange(0, 25000),
+        // latitude: randomInRange(90, 90),
+        // longitude: randomInRange(-180, 180),
 
         mission: '51',
         id: uuid.v4()

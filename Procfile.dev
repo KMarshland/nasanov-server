@@ -1,4 +1,4 @@
 influx: npm run influx
 reader: npm run reader
 writer: npm run writer
-tester: npm run tester
+tester: sleep 10 && npm run tester

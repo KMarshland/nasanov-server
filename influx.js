@@ -21,21 +21,57 @@ function tableFor(name) {
     };
 }
 
-// establish a connection to the database
-const influx = new Influx.InfluxDB({
-    host: 'localhost',
-    database: DATABASE_NAME,
-    schema: SCHEMA
-});
+/*
+ * Establishes a connection to the database
+ */
+let influx;
+let connected = false;
+function connect() {
+    return new Promise(function (fullfill, reject) {
+        influx = new Influx.InfluxDB({
+            host: 'localhost',
+            database: DATABASE_NAME,
+            schema: SCHEMA
+        });
 
-// create database if it doesn't already exist
-influx.getDatabaseNames()
-    .then(names => {
-        if (!names.includes(DATABASE_NAME)) {
-            return influx.createDatabase(DATABASE_NAME);
-        }
+        // create database if it doesn't already exist
+        influx.getDatabaseNames()
+            .then(names => {
+                if (names.includes(DATABASE_NAME)) {
+                    connected = true;
+                    fullfill(influx);
+                }
+
+                influx.createDatabase(DATABASE_NAME).then(function () {
+                    connected = true;
+                    fullfill(influx);
+                }).catch(reject)
+            }).catch(reject);
     });
+}
 
-influx.DATABASE_NAME = DATABASE_NAME;
+module.exports = new Promise(function (fullfill, reject) {
 
-module.exports = influx;
+    // don't reinstantiate multiple times
+    if (connected) {
+        fullfill(influx);
+        return;
+    }
+
+    let retries = 3;
+    tryConnect();
+
+    function tryConnect() {
+        connect().then(fullfill).catch(function (err) {
+            if (retries <= 0) {
+                reject(err);
+                return;
+            }
+
+            retries --;
+            setTimeout(tryConnect, 1000);
+        })
+    }
+});
+module.exports.DATABASE_NAME = DATABASE_NAME;
+

@@ -1,4 +1,4 @@
-const influx = require('./influx.js');
+const influxConnection = require('./influx.js');
 const dgram = require('dgram');
 const { StringDecoder } = require('string_decoder');
 
@@ -106,28 +106,29 @@ function handlePoint(dataBuffer) {
 function configureInflux() {
 
     return new Promise(function (fulfill, reject){
+        influxConnection.then(function (influx) {
+            // check if the subscription already exists
+            influx.query(`SHOW SUBSCRIPTIONS`).then(function (rows) {
+                let created = false;
 
-        // check if the subscription already exists
-        influx.query(`SHOW SUBSCRIPTIONS`).then(function (rows) {
-            let created = false;
-
-            for (let i = 0; i < rows.length; i++){
-                if (rows[i].name == SUBSCRIPTION_NAME) {
-                    created = true;
-                    break;
+                for (let i = 0; i < rows.length; i++){
+                    if (rows[i].name == SUBSCRIPTION_NAME) {
+                        created = true;
+                        break;
+                    }
                 }
-            }
 
-            if (created) {
-                fulfill();
-                return;
-            }
+                if (created) {
+                    fulfill();
+                    return;
+                }
 
-            console.log('Creating subscription');
-            influx.query(
-                `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influx.DATABASE_NAME +
-                `"."autogen" DESTINATIONS ALL 'udp://127.0.0.1:` + PORT + `'`
-            ).then(fulfill).catch(reject);
+                console.log('Creating subscription');
+                influx.query(
+                    `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influx.DATABASE_NAME +
+                    `"."autogen" DESTINATIONS ALL 'udp://127.0.0.1:` + PORT + `'`
+                ).then(fulfill).catch(reject);
+            }).catch(reject);
         }).catch(reject);
     });
 
