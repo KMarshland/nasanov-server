@@ -4,7 +4,12 @@ const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
 
 const WebSocket = require('ws');
-const writerSocket = new WebSocket('ws://localhost:5240');
+
+const validate = require('./validate.js');
+const timestamp = new Date().valueOf();
+const signature = validate.sign(timestamp);
+
+const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
 const readerSocket = new WebSocket('ws://localhost:5250');
 
 let sentTransmissions = {};
@@ -16,7 +21,7 @@ writerSocket.on('open', function open() {
     send();
 
     function send() {
-        console.log('Sending');
+        console.log('nasanov-client send');
 
         let transmission = JSON.stringify(randomTransmission());
         sentTransmissions[transmission] = new Date().valueOf();
