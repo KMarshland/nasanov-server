@@ -2,6 +2,7 @@
 const RATE = 100; // in requests per second
 const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
+const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
 
 const WebSocket = require('ws');
 const uuid = require('node-uuid');
@@ -102,7 +103,7 @@ function endTest(){
     console.log(
         roundToPercent(receivedCorrectly/sent) + "% received correctly " +
         "(" + roundToPercent(fastResponses/receivedCorrectly) + "% fast, " +
-        "95/99 latencies: " + getPercentile(95, latencies) + "/" + getPercentile(99, latencies) + " ms)"
+        "50/95/99 latencies: " + getPercentile(50, latencies) + "/" + getPercentile(95, latencies) + "/" + getPercentile(99, latencies) + " ms)"
     );
     console.log('');
     console.log('');
@@ -123,7 +124,7 @@ function endTest(){
  * Creates a random transmission
  */
 function randomTransmission() {
-    return {
+    let data = {
         timestamp: new Date().valueOf(),
         altitude: randomInRange(0, 25000),
         latitude: randomInRange(90, 90),
@@ -131,7 +132,13 @@ function randomTransmission() {
 
         mission: '51',
         id: uuid.v4()
+    };
+
+    for (let i = 0; i < KEY_COUNT; i++){
+        data['key' + i] = Math.random();
     }
+
+    return data;
 }
 
 /*
