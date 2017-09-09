@@ -77,7 +77,6 @@ function handlePoint(dataBuffer) {
         data = {
             id: id,
             mission: mission,
-            arity: arity,
             timestamp: timestamp
         };
         pointBuffer[id] = data;
@@ -92,6 +91,7 @@ function handlePoint(dataBuffer) {
 
     // send it on!
     delete pointBuffer[id];
+    delete data['arity']; // no need to send arity -- it's just for internal use
 
     console.log('nasanov-reader full point');
 
