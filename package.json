@@ -5,6 +5,8 @@
   "description": "Servers for ingesting and distributing rf transmissions",
   "main": "main.js",
   "scripts": {
+    "start": "node main.js",
+
     "writer": "MODE=writer PORT=5240 node main.js",
     "reader": "MODE=reader PORT=5250 node main.js",
     "tester": "node test.js",
