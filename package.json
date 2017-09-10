@@ -1,8 +1,13 @@
 {
   "name": "nasonov-server",
   "version": "1.0.0",
-  "node": "8.4",
   "description": "Servers for ingesting and distributing rf transmissions",
+
+  "node": "8.4",
+  "engines": {
+    "node": ">=8.4"
+  },
+
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
@@ -13,9 +18,11 @@
     "test": "NASANOV_SECRET=yikes foreman start -f Procfile.dev",
     "influx": "influxd"
   },
+
   "repository": "https://github.com/KMarshland/nasanov-server.git",
   "author": "Kai Marshland <kaimarshland@gmail.com>",
   "license": "MIT",
+
   "dependencies": {
     "influx": "^5.0.7",
     "node-uuid": "^1.4.8",
