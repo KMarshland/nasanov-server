@@ -58,7 +58,7 @@ module.exports = new Promise(function (fullfill, reject) {
         return;
     }
 
-    let retries = 3;
+    let retries = 10;
     tryConnect();
 
     function tryConnect() {
@@ -67,6 +67,8 @@ module.exports = new Promise(function (fullfill, reject) {
                 reject(err);
                 return;
             }
+
+            console.log('Retrying influx connection');
 
             retries --;
             setTimeout(tryConnect, 1000);

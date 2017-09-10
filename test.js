@@ -127,11 +127,11 @@ function randomTransmission() {
     let data = {
         timestamp: new Date().valueOf(),
 
-        // altitude: randomInRange(0, 25000),
-        // latitude: randomInRange(90, 90),
-        // longitude: randomInRange(-180, 180),
+        altitude_barometer: randomInRange(0, 25000),
+        latitude: randomInRange(-90, 90),
+        longitude: randomInRange(-180, 180),
 
-        mission: 1,
+        mission: 28,
         id: uuid.v4()
     };
 
