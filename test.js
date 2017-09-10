@@ -12,16 +12,16 @@ const validate = require('./validate.js');
 let sentTransmissions = {};
 let receivedTransmissions = {};
 
-initilizeWriter();
+initializeWriter();
 initializeReader();
 
-function initilizeWriter() {
+function initializeWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
     const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
 
     writerSocket.on('error', function () {
-        setTimeout(initilizeWriter, 500);
+        setTimeout(initializeWriter, 500);
     });
 
     writerSocket.on('open', function open() {
