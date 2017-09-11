@@ -37,17 +37,6 @@ function init(wss) {
 
 function handleMessage(message, ws) {
 
-    // log
-    (function () {
-        console.log('nasanov-writer receive');
-
-        if (ws.readyState !== WebSocket.OPEN) {
-            return;
-        }
-
-        ws.send(id + ':receive');
-    })();
-
     const data = JSON.parse(message);
 
     const timestamp = new Date(data.timestamp);
@@ -79,6 +68,17 @@ function handleMessage(message, ws) {
             timestamp: timestamp
         });
     }
+
+    // log
+    (function () {
+        console.log('nasanov-writer receive');
+
+        if (ws.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        ws.send(id + ':receive');
+    })();
 
     influxConnection.then(function (influx) {
         influx.writePoints(points).then(function () {

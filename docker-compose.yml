@@ -18,6 +18,7 @@ services:
     ports:
       - 5240:5240
     environment:
+      - NASANOV_SECRET
       - MODE=writer
       - PORT=5240
       - INFLUX_HOST=influx
