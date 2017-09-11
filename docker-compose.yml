@@ -1,28 +1,47 @@
 
 version: "2"
 
+networks:
+  writer:
+    internal: true
+  reader:
+    internal: true
+  exposed:
+    internal: false
+
 services:
   writer:
     build: .
-    links:
-        - influx
+    networks:
+        - writer
+        - exposed
     ports:
       - 5240:5240
     environment:
+      - MODE=writer
       - PORT=5240
       - INFLUX_HOST=influx
   reader:
     build: .
-    links:
-        - influx
+    networks:
+        - reader
+        - exposed
+    expose:
+      - 9090
     ports:
       - 5250:5250
     environment:
+      - MODE=reader
       - PORT=5250
       - INFLUX_HOST=influx
+      - LISTENER_HOST=reader
+      - LISTENER_PORT=9090
   influx:
     image: influxdb
     volumes:
         - ./:/var/lib/influxdb
+    networks:
+      - writer
+      - reader
     expose:
       - 8086

@@ -5,8 +5,8 @@ const dgram = require('dgram');
 const { StringDecoder } = require('string_decoder');
 
 const SUBSCRIPTION_NAME = 'influx_subscriber';
-const HOST = '127.0.0.1';
-const PORT = 9090;
+const HOST = process.env.LISTENER_HOST || '127.0.0.1';
+const PORT = process.env.LISTENER_PORT || 9090;
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
 
