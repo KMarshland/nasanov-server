@@ -56,6 +56,19 @@ function connect() {
                     fullfill(influx);
                 }).catch(reject)
             }).catch(reject);
+
+        // create admin if no one else has
+        influx.getUsers().then(function (users) {
+
+            // stop if there's already an admin
+            for (let i = 0; i < users.length; i++) {
+                if (users[i].admin) {
+                    return
+                }
+            }
+
+            influx.createUser(process.env.INFLUX_USERNAME || 'root', process.env.INFLUX_PASSWORD, true)
+        });
     });
 }
 

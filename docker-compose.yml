@@ -16,10 +16,11 @@ services:
     ports:
       - 5240:5240
     environment:
-      - NASANOV_SECRET
       - MODE=writer
       - PORT=5240
       - INFLUX_HOST=influx
+      - INFLUX_PASSWORD
+      - NASANOV_SECRET
   reader:
     build: .
     networks:
@@ -33,12 +34,15 @@ services:
       - MODE=reader
       - PORT=5250
       - INFLUX_HOST=influx
+      - INFLUX_PASSWORD
       - LISTENER_HOST=reader
       - LISTENER_PORT=9090
   influx:
     image: influxdb
+    command: influxd -config /etc/influxdb/influxdb.conf
     volumes:
         - ./:/var/lib/influxdb
+        - ./influxdb.conf:/etc/influxdb/influxdb.conf:ro
     networks:
       - db
     expose:
