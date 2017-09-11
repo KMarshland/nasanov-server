@@ -29,6 +29,9 @@ function initializeWriter() {
         send();
 
         function send() {
+            if (writerSocket.readyState !== WebSocket.OPEN) {
+                return;
+            }
 
             let transmission = utilities.randomTransmission(28, KEY_COUNT);
             console.log('nasanov-client send');

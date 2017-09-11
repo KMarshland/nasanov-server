@@ -2,11 +2,14 @@ const WebSocket = require('ws');
 
 const influxConnection = require('./influx.js');
 const dgram = require('dgram');
+const os = require('os');
 const { StringDecoder } = require('string_decoder');
 
 const SUBSCRIPTION_NAME = 'influx_subscriber';
-const HOST = process.env.LISTENER_HOST || '127.0.0.1';
 const PORT = process.env.LISTENER_PORT || 9090;
+
+const HOST = os.networkInterfaces()['eth1'][0].address || '127.0.0.1';
+const LISTENER_HOST = process.env.LISTENER_HOST || HOST;
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
 
@@ -128,7 +131,7 @@ function configureInflux() {
                 console.log('Creating subscription');
                 influx.query(
                     `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influxConnection.DATABASE_NAME +
-                    `"."autogen" DESTINATIONS ALL 'udp://` + HOST + `:` + PORT + `'`
+                    `"."autogen" DESTINATIONS ALL 'udp://` + LISTENER_HOST + `:` + PORT + `'`
                 ).then(fulfill).catch(reject);
             }).catch(reject);
         }).catch(reject);
