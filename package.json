@@ -19,7 +19,9 @@
 
     "test": "NASANOV_SECRET=yikes INFLUX_PASSWORD=skeleton foreman start -f Procfile.dev",
     "prod-connected": "node test_prod_connected.js",
-    "generate-prod": "node test_prod_receive.js"
+    "generate-prod": "node test_prod_receive.js",
+
+    "tunnel": "ssh -fNL 2375:localhost:2375 -p 2200 ssi@nasanovmgmt.westus2.cloudapp.azure.com"
   },
 
   "repository": "https://github.com/KMarshland/nasanov-server.git",

@@ -3,3 +3,6 @@
 **/meta
 **/data
 **/wal
+**/translations
+
+docker-compose.yml
