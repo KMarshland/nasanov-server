@@ -2,9 +2,7 @@
 version: "2"
 
 networks:
-  writer:
-    internal: true
-  reader:
+  db:
     internal: true
   exposed:
     internal: false
@@ -13,7 +11,7 @@ services:
   writer:
     build: .
     networks:
-        - writer
+        - db
         - exposed
     ports:
       - 5240:5240
@@ -25,7 +23,7 @@ services:
   reader:
     build: .
     networks:
-        - reader
+        - db
         - exposed
     expose:
       - 9090
@@ -42,7 +40,6 @@ services:
     volumes:
         - ./:/var/lib/influxdb
     networks:
-      - writer
-      - reader
+      - db
     expose:
       - 8086

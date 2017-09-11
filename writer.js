@@ -8,29 +8,31 @@ const HEARTBEAT_INTERVAL = 5000;
 function init(wss) {
     console.log('Initializing nasanov-writer');
 
-    wss.on('connection', function connected(ws, req) {
-        let time = req.url.split('/')[1];
-        let signature = req.url.split('/')[2];
+    influxConnection.then(function () {
+        wss.on('connection', function connected(ws, req) {
+            let time = req.url.split('/')[1];
+            let signature = req.url.split('/')[2];
 
-        // forbid unauthorized access
-        if (!validate.validate(time, signature)){
-            return;
-        }
-
-        ws.on('message', function (message) {
-            handleMessage(message, ws);
-        });
-
-        const interval = setInterval(function () {
-            if (ws.readyState !== WebSocket.OPEN) {
+            // forbid unauthorized access
+            if (!validate.validate(time, signature)) {
                 return;
             }
 
-            ws.send(new Date().valueOf());
-        }, HEARTBEAT_INTERVAL);
+            ws.on('message', function (message) {
+                handleMessage(message, ws);
+            });
 
-        ws.on('close', function () {
-            clearInterval(interval);
+            const interval = setInterval(function () {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                ws.send(new Date().valueOf());
+            }, HEARTBEAT_INTERVAL);
+
+            ws.on('close', function () {
+                clearInterval(interval);
+            });
         });
     });
 }

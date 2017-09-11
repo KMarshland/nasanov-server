@@ -128,7 +128,7 @@ function configureInflux() {
                 console.log('Creating subscription');
                 influx.query(
                     `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influxConnection.DATABASE_NAME +
-                    `"."autogen" DESTINATIONS ALL 'udp://127.0.0.1:` + PORT + `'`
+                    `"."autogen" DESTINATIONS ALL 'udp://` + HOST + `:` + PORT + `'`
                 ).then(fulfill).catch(reject);
             }).catch(reject);
         }).catch(reject);

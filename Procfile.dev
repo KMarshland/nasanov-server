@@ -1,2 +1,2 @@
 servers: docker-compose up --build
-tester: sleep 10 && npm run tester
+tester: sleep 1 && npm run tester
