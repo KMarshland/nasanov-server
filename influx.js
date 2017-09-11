@@ -67,7 +67,7 @@ module.exports = new Promise(function (fullfill, reject) {
         return;
     }
 
-    let retries = 10;
+    let retries = 60;
     tryConnect();
 
     function tryConnect() {

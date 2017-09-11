@@ -1,0 +1,28 @@
+
+version: "2"
+
+services:
+  writer:
+    build: .
+    links:
+        - influx
+    ports:
+      - 5240:5240
+    environment:
+      - PORT=5240
+      - INFLUX_HOST=influx
+  reader:
+    build: .
+    links:
+        - influx
+    ports:
+      - 5250:5250
+    environment:
+      - PORT=5250
+      - INFLUX_HOST=influx
+  influx:
+    image: influxdb
+    volumes:
+        - ./:/var/lib/influxdb
+    expose:
+      - 8086
