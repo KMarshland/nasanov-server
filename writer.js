@@ -8,13 +8,28 @@ const HEARTBEAT_INTERVAL = 5000;
 function init(wss) {
     console.log('Initializing nasanov-writer');
 
+    let autoclosing = true;
+
+    wss.on('connection', function connected(ws) {
+        if (!autoclosing) {
+            return;
+        }
+
+        ws.close();
+    });
+
     influxConnection.then(function () {
+        console.log('nasanov-writer connected');
+        autoclosing = false;
+
         wss.on('connection', function connected(ws, req) {
             let time = req.url.split('/')[1];
             let signature = req.url.split('/')[2];
 
             // forbid unauthorized access
             if (!validate.validate(time, signature)) {
+                console.log('Invalid access');
+                ws.close();
                 return;
             }
 

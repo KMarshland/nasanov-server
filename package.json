@@ -17,7 +17,7 @@
     "tester": "node test.js",
     "influx": "influxd",
 
-    "test": "NASANOV_SECRET=yikes INFLUX_PASSWORD=skeleton foreman start -f Procfile.dev",
+    "test": "NASANOV_SECRET=yikes foreman start -f Procfile.dev",
     "prod-connected": "node test_prod_connected.js",
     "generate-prod": "node test_prod_receive.js",
 

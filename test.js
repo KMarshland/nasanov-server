@@ -20,7 +20,13 @@ function initializeWriter() {
     const signature = validate.sign(timestamp);
     const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
 
-    writerSocket.on('error', function () {
+    let sendTimeout;
+
+    writerSocket.on('close', function () {
+        console.log('Writer closed');
+        if (sendTimeout){
+            clearTimeout(sendTimeout);
+        }
         setTimeout(initializeWriter, 500);
     });
 
@@ -52,7 +58,7 @@ function initializeWriter() {
                 return;
             }
 
-            setTimeout(send, 1000 / RATE);
+            sendTimeout = setTimeout(send, 1000 / RATE);
         }
     });
 }
@@ -78,7 +84,7 @@ function initializeReader() {
  * Hashes an object to a string
  */
 function hash(obj) {
-    const precision = 4;
+    const precision = 2;
     const multiplier = Math.pow(10, precision);
 
     const keys = Object.keys(obj).sort();

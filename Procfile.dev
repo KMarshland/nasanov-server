@@ -1,2 +1,4 @@
-servers: docker-compose up --build
+influx: npm run influx
+writer: npm run writer
+reader: npm run reader
 tester: sleep 1 && npm run tester
