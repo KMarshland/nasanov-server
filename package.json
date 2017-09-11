@@ -15,8 +15,11 @@
     "writer": "MODE=writer PORT=5240 node main.js",
     "reader": "MODE=reader PORT=5250 node main.js",
     "tester": "node test.js",
+    "influx": "influxd",
+
     "test": "NASANOV_SECRET=yikes foreman start -f Procfile.dev",
-    "influx": "influxd"
+    "prod-connected": "node test_prod_connected.js",
+    "generate-prod": "node test_prod_receive.js"
   },
 
   "repository": "https://github.com/KMarshland/nasanov-server.git",

@@ -5,7 +5,7 @@ const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissio
 const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
 
 const WebSocket = require('ws');
-const uuid = require('node-uuid');
+const utilities = require('./test_utilities.js');
 
 const validate = require('./validate.js');
 
@@ -30,7 +30,7 @@ function initializeWriter() {
 
         function send() {
 
-            let transmission = randomTransmission();
+            let transmission = utilities.randomTransmission(28, KEY_COUNT);
             console.log('nasanov-client send');
 
             sentTransmissions[hash(transmission)] = new Date().valueOf();
@@ -39,7 +39,13 @@ function initializeWriter() {
 
             const elapsedMS = new Date().valueOf() - start;
             if (elapsedMS / 1000 > DURATION) {
-                setTimeout(endTest, ACCEPTABLE_LATENCY);
+                setTimeout(function () {
+                    utilities.endTest(sentTransmissions, receivedTransmissions, {
+                        rate: RATE,
+                        duration: DURATION,
+                        acceptableLatency: ACCEPTABLE_LATENCY
+                    })
+                }, ACCEPTABLE_LATENCY);
                 return;
             }
 
@@ -66,98 +72,6 @@ function initializeReader() {
 }
 
 /*
- * Analyzes results then terminates test
- */
-function endTest(){
-    let sent = Object.keys(sentTransmissions).length;
-    let receivedCorrectly = 0;
-    let received = Object.keys(receivedTransmissions).length;
-    let fastResponses = 0;
-    let latencies = [];
-
-    for (let key in sentTransmissions) {
-        if (!sentTransmissions.hasOwnProperty(key)) {
-            continue;
-        }
-
-        if (!receivedTransmissions[key]){
-            continue;
-        }
-
-        receivedCorrectly++;
-        let latency = receivedTransmissions[key] - sentTransmissions[key];
-
-        latencies.push(latency);
-        if (latency < ACCEPTABLE_LATENCY) {
-            fastResponses ++;
-        }
-    }
-
-    console.log('');
-    console.log('');
-    console.log('');
-    console.log(
-        sent + ' transmissions sent (expected to send ' + RATE*DURATION + '); ' +
-        received + ' received (' + roundToPercent(received/sent) + '%)'
-    );
-    console.log(
-        roundToPercent(receivedCorrectly/sent) + "% received correctly " +
-        "(" + roundToPercent(fastResponses/receivedCorrectly) + "% fast, " +
-        "50/95/99 latencies: " + getPercentile(50, latencies) + "/" + getPercentile(95, latencies) + "/" + getPercentile(99, latencies) + " ms)"
-    );
-    console.log('');
-    console.log('');
-    console.log('');
-
-    process.exit();
-
-    function roundToPercent(decimal) {
-        if (isNaN(decimal)) {
-            return 0;
-        }
-
-        return Math.round(decimal * 1000) / 10;
-    }
-}
-
-/*
- * Creates a random transmission
- */
-function randomTransmission() {
-    let data = {
-        timestamp: new Date().valueOf(),
-
-        altitude_barometer: randomInRange(0, 25000),
-        latitude: randomInRange(-90, 90),
-        longitude: randomInRange(-180, 180),
-
-        mission: 28,
-        id: uuid.v4()
-    };
-
-    for (let i = 0; i < KEY_COUNT; i++){
-        data['key' + i] = Math.random();
-    }
-
-    return data;
-}
-
-/*
- * Returns a random number within a range
- */
-function randomInRange(min, max) {
-    return Math.random() * (max - min) + min;
-}
-
-function getPercentile(percentile, array) {
-    array.sort();
-
-    let index = (percentile/100) * array.length;
-
-    return array[Math.floor(index)];
-}
-
-/*
  * Hashes an object to a string
  */
 function hash(obj) {
@@ -171,7 +85,7 @@ function hash(obj) {
         let value = obj[key];
 
         if (typeof value == "number") {
-            values.push(Math.round(value * precision) / precision);
+            values.push(Math.round(value * multiplier) / multiplier);
         } else {
             values.push(value);
         }
