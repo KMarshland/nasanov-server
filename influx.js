@@ -29,7 +29,11 @@ let connected = false;
 function connect() {
     return new Promise(function (fullfill, reject) {
         influx = new Influx.InfluxDB({
-            host: 'localhost',
+            host: process.env.INFLUX_HOST,
+            port: process.env.INFLUX_POST,
+            username: process.env.INFLUX_USERNAME,
+            password: process.env.INFLUX_PASSWORD,
+
             database: DATABASE_NAME,
             schema: SCHEMA
         });
