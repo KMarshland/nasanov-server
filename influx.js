@@ -30,7 +30,7 @@ function connect() {
     return new Promise(function (fullfill, reject) {
         influx = new Influx.InfluxDB({
             host: process.env.INFLUX_HOST,
-            port: process.env.INFLUX_POST,
+            port: process.env.INFLUX_PORT,
             username: process.env.INFLUX_USERNAME,
             password: process.env.INFLUX_PASSWORD,
 
