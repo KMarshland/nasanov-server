@@ -1,6 +1,6 @@
 const Influx = require('influx');
 
-const DATABASE_NAME = 'nasanov_transmissions';
+const DATABASE_NAME = 'defaultdb';
 
 // note that the schema isn't strictly required, but it's nice for debugging
 const SCHEMA = [

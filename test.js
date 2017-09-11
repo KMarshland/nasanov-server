@@ -1,6 +1,6 @@
 
 const RATE = 1; // in requests per second
-const DURATION = 1<<16; // number of seconds it will send data for
+const DURATION = 3; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
 const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
 

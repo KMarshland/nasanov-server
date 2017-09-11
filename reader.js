@@ -127,7 +127,7 @@ function configureInflux() {
 
                 console.log('Creating subscription');
                 influx.query(
-                    `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influx.DATABASE_NAME +
+                    `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influxConnection.DATABASE_NAME +
                     `"."autogen" DESTINATIONS ALL 'udp://127.0.0.1:` + PORT + `'`
                 ).then(fulfill).catch(reject);
             }).catch(reject);
@@ -137,8 +137,8 @@ function configureInflux() {
     // Useful snippets:
     //
     // SHOW SUBSCRIPTIONS
-    // DROP SUBSCRIPTION influx_subscriber ON "nasanov_transmissions"."autogen"
-    // CREATE SUBSCRIPTION influx_subscriber ON "nasanov_transmissions"."autogen" DESTINATIONS ALL 'udp://localhost:9090'
+    // DROP SUBSCRIPTION influx_subscriber ON "defaultdb"."autogen"
+    // CREATE SUBSCRIPTION influx_subscriber ON "defaultdb"."autogen" DESTINATIONS ALL 'udp://localhost:9090'
 }
 
 module.exports = {
