@@ -22,6 +22,10 @@ function initializeWriter() {
 
     let sendTimeout;
 
+    writerSocket.on('error', function (error) {
+        console.log('Writer error', error);
+    });
+
     writerSocket.on('close', function () {
         console.log('Writer closed');
         if (sendTimeout){
@@ -32,7 +36,7 @@ function initializeWriter() {
 
     writerSocket.on('open', function open() {
         const start = new Date().valueOf();
-        send();
+        sendTimeout = setTimeout(send, ACCEPTABLE_LATENCY);
 
         function send() {
             if (writerSocket.readyState !== WebSocket.OPEN) {

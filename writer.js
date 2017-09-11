@@ -8,19 +8,15 @@ const HEARTBEAT_INTERVAL = 5000;
 function init(wss) {
     console.log('Initializing nasanov-writer');
 
-    let autoclosing = true;
-
-    wss.on('connection', function connected(ws) {
-        if (!autoclosing) {
-            return;
-        }
-
+    function autoclose(ws) {
         ws.close();
-    });
+    }
+    wss.on('connection', autoclose);
 
     influxConnection.then(function () {
         console.log('nasanov-writer connected');
-        autoclosing = false;
+
+        wss.removeListener('connection', autoclose);
 
         wss.on('connection', function connected(ws, req) {
             let time = req.url.split('/')[1];

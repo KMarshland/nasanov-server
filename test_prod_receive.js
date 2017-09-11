@@ -20,13 +20,23 @@ function initializeWriter() {
     const signature = validate.sign(timestamp);
     const writerSocket = new WebSocket('wss://nasanov-writer.azurewebsites.net/' + timestamp + '/' + signature);
 
-    writerSocket.on('error', function () {
+    let sendTimeout;
+
+    writerSocket.on('close', function () {
+        console.log('Writer closed');
+        if (sendTimeout){
+            clearTimeout(sendTimeout);
+        }
         setTimeout(initializeWriter, 500);
+    });
+
+    writerSocket.on('error', function (error) {
+       console.log('Writer error', error);
     });
 
     writerSocket.on('open', function open() {
         const start = new Date().valueOf();
-        send();
+        sendTimeout = setTimeout(send, ACCEPTABLE_LATENCY);
 
         function send() {
 
@@ -49,7 +59,7 @@ function initializeWriter() {
                 return;
             }
 
-            setTimeout(send, 1000 / RATE);
+            sendTimeout = setTimeout(send, 1000 / RATE);
         }
     });
 
@@ -69,9 +79,9 @@ function initializeWriter() {
 
         console.log(message);
     });
-
-    writerSocket.on('close', function () {
-        console.log('Socket closed unexpectedly');
-        process.exit();
-    })
+    //
+    // writerSocket.on('close', function () {
+    //     console.log('Socket closed unexpectedly');
+    //     process.exit();
+    // })
 }
