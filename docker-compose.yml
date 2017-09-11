@@ -9,6 +9,7 @@ networks:
 
 services:
   writer:
+    image: kaimarshland/nasanov
     build: .
     networks:
         - db
@@ -22,6 +23,7 @@ services:
       - INFLUX_PASSWORD
       - NASANOV_SECRET
   reader:
+    image: kaimarshland/nasanov
     build: .
     networks:
         - db
@@ -39,10 +41,8 @@ services:
       - LISTENER_PORT=9090
   influx:
     image: influxdb
-    command: influxd -config /etc/influxdb/influxdb.conf
     volumes:
         - ./:/var/lib/influxdb
-        - ./influxdb.conf:/etc/influxdb/influxdb.conf:ro
     networks:
       - db
     expose:

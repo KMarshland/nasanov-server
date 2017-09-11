@@ -8,20 +8,22 @@ initializeReader();
 function initializeWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
-    const writerSocket = new WebSocket('wss://nasanov-writer.azurewebsites.net/' + timestamp + '/' + signature);
+    const writerSocket = new WebSocket('ws://nasanov.stanfordssi.org:5240/' + timestamp + '/' + signature);
     
     logSocket('writer', writerSocket, initializeWriter);
 }
 
 function initializeReader() {
-    const readerSocket = new WebSocket('wss://nasanov-reader.azurewebsites.net/');
+    const readerSocket = new WebSocket('ws://nasanov.stanfordssi.org:5250/');
 
     logSocket('reader', readerSocket, initializeReader);
 }
 
 function logSocket(name, socket, retry) {
-    socket.on('error', function () {
-        console.log(name + ': Errored');
+    console.log('Trying to connect to ' + name);
+
+    socket.on('error', function (err) {
+        console.log(name + ': Errored', err);
         setTimeout(retry, 500);
     });
 
