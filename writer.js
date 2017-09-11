@@ -36,7 +36,17 @@ function init(wss) {
 }
 
 function handleMessage(message, ws) {
-    console.log('nasanov-writer receive');
+
+    // log
+    (function () {
+        console.log('nasanov-writer receive');
+
+        if (ws.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        ws.send(id + ':receive');
+    })();
 
     const data = JSON.parse(message);
 
@@ -71,16 +81,30 @@ function handleMessage(message, ws) {
     }
 
     influxConnection.then(function (influx) {
-        influx.writePoints(points).catch(err => {
-            console.error(`Error saving data to InfluxDB! ${err.stack}`)
-        }).then(function () {
+        influx.writePoints(points).then(function () {
             if (ws.readyState !== WebSocket.OPEN) {
                 return;
             }
 
             // send a confirmation that we stored the message with that id
-            ws.send(id)
+            ws.send(id + ':success')
+        }).catch(function (err) {
+            console.error(`Error saving data to InfluxDB! ${err.stack}`);
+
+            if (ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            ws.send(id + ':error:' + e);
         });
+    }).catch(function (err) {
+        console.error(`Error saving data to InfluxDB! ${err.stack}`);
+
+        if (ws.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        ws.send(id + ':error:' + e);
     });
 
 }

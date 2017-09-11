@@ -59,7 +59,14 @@ function initializeWriter() {
             return;
         }
 
-        receivedTransmissions[message] = new Date().valueOf();
-        console.log('nasanov-client confirmation');
+        const parts = message.split(':');
+        const id = parts[0];
+        const type = parts[1];
+
+        if (type == 'success') {
+            receivedTransmissions[id] = new Date().valueOf();
+        }
+
+        console.log(message);
     });
 }

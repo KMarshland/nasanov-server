@@ -56,10 +56,7 @@ The following example would send four keys: `altitude_barometer`, `altitude_gps`
 ```
 
 ### Verifying that a transmission was written
-After a successful write, the websocket will receive a message with the id of the transmission that was sent, eg `b82c6a52-e8fc-4e3a-91ec-36c0565d5b8f`.
-If no confirmation comes within, say, a second, it is safe to assume that either:
-1. It failed to save in the database properly
-2. The websocket connection failed silently
+After a successful write, the websocket will receive a message with the id of the transmission that was sent, eg `b82c6a52-e8fc-4e3a-91ec-36c0565d5b8f:success` or `b82c6a52-e8fc-4e3a-91ec-36c0565d5b8f:error:Why`.
 
 ### Hearbeat
 Every 5 seconds, the writer will send a message with the current timestamp
