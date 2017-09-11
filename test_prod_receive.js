@@ -69,4 +69,9 @@ function initializeWriter() {
 
         console.log(message);
     });
+
+    writerSocket.on('close', function () {
+        console.log('Socket closed unexpectedly');
+        process.exit();
+    })
 }

@@ -34,6 +34,11 @@ function connect() {
             username: process.env.INFLUX_USERNAME,
             password: process.env.INFLUX_PASSWORD,
 
+            protocol: process.env.INFLUX_PROTOCOL || 'http',
+            options: {
+                rejectUnauthorized: false
+            },
+
             database: DATABASE_NAME,
             schema: SCHEMA
         });
