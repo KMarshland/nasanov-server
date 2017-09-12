@@ -5,15 +5,17 @@ const influxConnection = require('./influx.js');
 
 const HEARTBEAT_INTERVAL = 5000;
 
-function init() {
-    console.log('Initializing nasonov-writer');
+let WSS;
 
-    const wss = new WebSocket.Server({ port: process.env.PORT || 5000 });
+function init(wss) {
+    console.log('Initializing nasonov-writer');
 
     function autoclose(ws) {
         ws.close();
     }
     wss.on('connection', autoclose);
+
+    WSS = wss;
 
     influxConnection.then(function () {
         console.log('nasonov-writer connected');
@@ -21,8 +23,9 @@ function init() {
         wss.removeListener('connection', autoclose);
 
         wss.on('connection', function connected(ws, req) {
-            let time = req.url.split('/')[1];
-            let signature = req.url.split('/')[2];
+            const urlParts = req.url.split('/');
+            let time = urlParts[1];
+            let signature = urlParts[2];
 
             // forbid unauthorized access
             if (!validate.validate(time, signature)) {
@@ -30,10 +33,6 @@ function init() {
                 ws.close();
                 return;
             }
-
-            ws.on('message', function (message) {
-                handleMessage(message, ws);
-            });
 
             const interval = setInterval(function () {
                 if (ws.readyState !== WebSocket.OPEN) {
@@ -45,6 +44,16 @@ function init() {
 
             ws.on('close', function () {
                 clearInterval(interval);
+            });
+
+            let type = urlParts[3];
+            if (type == 'listen') {
+                ws.subscribed = true;
+                return;
+            }
+
+            ws.on('message', function (message) {
+                handleMessage(message, ws);
             });
         });
     });
@@ -102,7 +111,19 @@ function handleMessage(message, ws) {
             }
 
             // send a confirmation that we stored the message with that id
-            ws.send(id + ':success')
+            ws.send(id + ':success');
+
+            WSS.clients.forEach(function each(client) {
+                if (client.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                if (!client.subscribed) {
+                    return;
+                }
+
+                client.send(JSON.stringify(data));
+            });
         }).catch(function (err) {
             console.error(`Error saving data to InfluxDB! ${err.stack}`);
 

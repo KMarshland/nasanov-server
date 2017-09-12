@@ -70,7 +70,12 @@ function initializeWriter() {
 function initializeReader() {
     const readerSocket = new WebSocket('ws://localhost:5250');
 
-    readerSocket.on('error', function () {
+    readerSocket.on('error', function (error) {
+        console.log('Writer error', error);
+    });
+
+    readerSocket.on('close', function () {
+        console.log('Reader socket closed');
         setTimeout(initializeReader, 500);
     });
 
