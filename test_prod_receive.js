@@ -18,7 +18,7 @@ let receivedTransmissions = {};
 function initializeWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
-    const writerSocket = new WebSocket('wss://nasanov-writer.azurewebsites.net/' + timestamp + '/' + signature);
+    const writerSocket = new WebSocket('wss://nasonov-writer.herokuapp.com/' + timestamp + '/' + signature);
 
     let sendTimeout;
 

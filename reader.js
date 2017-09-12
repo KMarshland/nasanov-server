@@ -9,7 +9,7 @@ let WSS;
 
 function init(wss) {
     console.log('Initializing nasonov-reader');
-    
+
     WSS = wss;
     wss.on('connection', function connected(ws, req) {});
 
