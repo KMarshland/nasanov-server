@@ -1,6 +1,5 @@
 const WebSocket = require('ws');
 
-const influxConnection = require('./influx.js');
 const validate = require('./validate.js');
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
@@ -10,25 +9,11 @@ let WSS;
 
 function init(wss) {
     console.log('Initializing nasonov-reader');
-
-    function autoclose(ws) {
-        ws.close();
-    }
-    wss.on('connection', autoclose);
-
+    
     WSS = wss;
+    wss.on('connection', function connected(ws, req) {});
 
-    // listen for new data
-    influxConnection.then(function () {
-        wss.removeListener('connection', autoclose);
-
-        wss.on('connection', function connected(ws, req) {});
-
-        connectToWriter();
-    }).catch(function (err) {
-        console.error(err);
-        process.exit();
-    });
+    connectToWriter();
 }
 
 function connectToWriter() {
