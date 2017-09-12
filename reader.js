@@ -1,35 +1,57 @@
 const WebSocket = require('ws');
 
 const influxConnection = require('./influx.js');
-const dgram = require('dgram');
+const http = require('http');
 const os = require('os');
 const { StringDecoder } = require('string_decoder');
 
 const SUBSCRIPTION_NAME = 'influx_subscriber';
-const PORT = process.env.LISTENER_PORT || 9090;
+const PORT = process.env.PORT;
 
 const HOST = ((os.networkInterfaces()['eth1'] || [])[0] || {}).address || '127.0.0.1';
 const LISTENER_HOST = process.env.LISTENER_HOST || HOST;
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
 
-let WSS;
-
+let wss;
 let pointBuffer = {};
 
-function init(wss) {
-    WSS = wss;
-    console.log('Initializing nasanov-reader');
+function init() {
+    console.log('Initializing nasonov-reader');
+
+    const requestHandler = function (req, response) {
+        if (req.headers['user-agent'] != 'InfluxDBClient') {
+            response.send(403);
+            response.end('error');
+            return;
+        }
+
+        let body = [];
+        req.on('data', (chunk) => {
+            body.push(chunk);
+        }).on('end', () => {
+            body = Buffer.concat(body).toString();
+            handlePoint(body);
+        });
+
+        response.end('success');
+    };
+    const server = http.createServer(requestHandler);
+
+    wss = new WebSocket.Server({ server });
+
 
     // listen for new data
     configureInflux().then(function () {
         console.log('nasanov-reader connected');
 
-        const server = dgram.createSocket('udp4');
+        server.listen(PORT, (err) => {
+            if (err) {
+                return console.log('something bad happened', err)
+            }
 
-        server.on('message', handlePoint);
-
-        server.bind(PORT, HOST);
+            console.log(`server is listening`)
+        });
     }).catch(function (err) {
         console.error(err);
         process.exit();
@@ -37,14 +59,11 @@ function init(wss) {
 }
 
 /*
- * Takes a partial point from the UDP connection, parses it, and stores it until it's ready to be sent on
+ * Takes a partial point from the HTTP connection, parses it, and stores it until it's ready to be sent on
  */
-function handlePoint(dataBuffer) {
+function handlePoint(point) {
 
     // parse the point
-
-    const decoder = new StringDecoder('utf8');
-    const point = decoder.write(dataBuffer);
 
     const parts = point.split(' ');
 
@@ -98,7 +117,7 @@ function handlePoint(dataBuffer) {
 
     console.log('nasanov-reader full point');
 
-    WSS.clients.forEach(function each(client) {
+    wss.clients.forEach(function each(client) {
         if (client.readyState !== WebSocket.OPEN) {
             return;
         }
@@ -112,28 +131,48 @@ function handlePoint(dataBuffer) {
  */
 function configureInflux() {
 
+    const VERSION = 1;
+
     return new Promise(function (fulfill, reject){
         influxConnection.then(function (influx) {
             // check if the subscription already exists
             influx.query(`SHOW SUBSCRIPTIONS`).then(function (rows) {
                 let created = false;
+                let toDelete = [];
 
+                let regexp = new RegExp('^' + SUBSCRIPTION_NAME + '(\\d*)');
                 for (let i = 0; i < rows.length; i++){
-                    if (rows[i].name == SUBSCRIPTION_NAME) {
-                        created = true;
-                        break;
+                    let match = rows[i].name.match(regexp);
+
+                    if (!match) {
+                        continue;
                     }
+
+                    const version = parseInt(match[1]);
+
+                    if (version != VERSION) {
+                        toDelete.push(rows[i].name);
+                        continue;
+                    }
+
+                    created = true;
                 }
+
+                toDelete.map(function (name) {
+                    console.log('Deleting old subscription' + name);
+                    influx.query("DROP SUBSCRIPTION " + name + " ON \"" + influxConnection.DATABASE_NAME + "\".\"autogen\"");
+                });
 
                 if (created) {
                     fulfill();
                     return;
                 }
 
-                console.log('Creating subscription');
+                const name = SUBSCRIPTION_NAME + VERSION;
+                console.log('Creating subscription ' + name);
                 influx.query(
-                    `CREATE SUBSCRIPTION ` + SUBSCRIPTION_NAME + ` ON "` + influxConnection.DATABASE_NAME +
-                    `"."autogen" DESTINATIONS ALL 'udp://` + LISTENER_HOST + `:` + PORT + `'`
+                    `CREATE SUBSCRIPTION ` + name + ` ON "` + influxConnection.DATABASE_NAME +
+                    `"."autogen" DESTINATIONS ALL 'http://` + LISTENER_HOST + (PORT ? `:` + PORT : '') + `'`
                 ).then(fulfill).catch(reject);
             }).catch(reject);
         }).catch(reject);

@@ -5,8 +5,10 @@ const influxConnection = require('./influx.js');
 
 const HEARTBEAT_INTERVAL = 5000;
 
-function init(wss) {
-    console.log('Initializing nasanov-writer');
+function init() {
+    console.log('Initializing nasonov-writer');
+
+    const wss = new WebSocket.Server({ port: process.env.PORT || 5000 });
 
     function autoclose(ws) {
         ws.close();
@@ -14,7 +16,7 @@ function init(wss) {
     wss.on('connection', autoclose);
 
     influxConnection.then(function () {
-        console.log('nasanov-writer connected');
+        console.log('nasonov-writer connected');
 
         wss.removeListener('connection', autoclose);
 

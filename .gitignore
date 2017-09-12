@@ -23,3 +23,5 @@ data
 meta
 wal
 translations
+
+setenv.sh

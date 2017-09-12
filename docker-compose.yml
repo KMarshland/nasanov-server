@@ -19,9 +19,12 @@ services:
     environment:
       - MODE=writer
       - PORT=5240
-      - INFLUX_HOST=influx
-      - INFLUX_PASSWORD
-      - NASANOV_SECRET
+      - INFLUX_HOST=${INFLUX_HOST}
+      - INFLUX_PORT=${INFLUX_PASSWORD}
+      - INFLUX_PROTOCOL=${INFLUX_PROTOCOL}
+      - INFLUX_USERNAME=${INFLUX_USERNAME}
+      - INFLUX_PASSWORD=${INFLUX_PASSWORD}
+      - NASANOV_SECRET=${NASANOV_SECRET}
   reader:
     image: kaimarshland/nasanov
     build: .
@@ -35,15 +38,10 @@ services:
     environment:
       - MODE=reader
       - PORT=5250
-      - INFLUX_HOST=influx
-      - INFLUX_PASSWORD
+      - INFLUX_HOST=${INFLUX_HOST}
+      - INFLUX_PORT=${INFLUX_PASSWORD}
+      - INFLUX_PROTOCOL=${INFLUX_PROTOCOL}
+      - INFLUX_USERNAME=${INFLUX_USERNAME}
+      - INFLUX_PASSWORD=${INFLUX_PASSWORD}
       - LISTENER_HOST=reader
       - LISTENER_PORT=9090
-  influx:
-    image: influxdb
-    volumes:
-        - ./:/var/lib/influxdb
-    networks:
-      - db
-    expose:
-      - 8086
