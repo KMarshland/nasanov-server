@@ -40,7 +40,7 @@ function initializeWriter() {
 
         function send() {
 
-            let transmission = utilities.randomTransmission(28, KEY_COUNT);
+            let transmission = utilities.randomTransmission(1, KEY_COUNT);
             console.log('nasanov-client send');
 
             sentTransmissions[transmission.id] = new Date().valueOf();

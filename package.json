@@ -18,6 +18,7 @@
     "influx": "influxd",
 
     "test": "NASANOV_SECRET=yikes foreman start -f Procfile.dev",
+    "test-prod": "USE_PROD=TRUE node test.js",
     "prod-connected": "node test_prod_connected.js",
     "generate-prod": "node test_prod_receive.js",
 

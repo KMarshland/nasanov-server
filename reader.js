@@ -24,6 +24,12 @@ function connectToWriter() {
 
     let closeTimeout = null;
 
+    ws.on('error', function (err) {
+        // close event will trigger a reconnect
+        ws.close();
+        console.log('Writer error: ' + err);
+    });
+
     // reconnect on close
     ws.on('close', function () {
         console.log('Writer closed');

@@ -1,8 +1,11 @@
 
 const RATE = 1; // in requests per second
 const DURATION = 3; // number of seconds it will send data for
-const ACCEPTABLE_LATENCY = 100; // ms it accepts for latency between transmissions
+const ACCEPTABLE_LATENCY = 1000; // ms it accepts for latency between transmissions
 const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
+
+const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.herokuapp.com' : 'ws://localhost:5240';
+const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5250';
 
 const WebSocket = require('ws');
 const utilities = require('./test_utilities.js');
@@ -18,7 +21,7 @@ initializeReader();
 function initializeWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
-    const writerSocket = new WebSocket('ws://localhost:5240/' + timestamp + '/' + signature);
+    const writerSocket = new WebSocket(WRITER_URL + '/' + timestamp + '/' + signature);
 
     let sendTimeout;
 
@@ -43,7 +46,7 @@ function initializeWriter() {
                 return;
             }
 
-            let transmission = utilities.randomTransmission(28, KEY_COUNT);
+            let transmission = utilities.randomTransmission(1, KEY_COUNT);
             console.log('nasanov-client send');
 
             sentTransmissions[hash(transmission)] = new Date().valueOf();
@@ -68,7 +71,7 @@ function initializeWriter() {
 }
 
 function initializeReader() {
-    const readerSocket = new WebSocket('ws://localhost:5250');
+    const readerSocket = new WebSocket(READER_URL);
 
     readerSocket.on('error', function (error) {
         console.log('Writer error', error);
