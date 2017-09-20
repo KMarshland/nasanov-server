@@ -20,16 +20,19 @@ function validate(timestamp, signature) {
 
     // timestamp must exist
     if (!timestamp) {
+        console.log('No timestamp');
         return false;
     }
 
     // timestamp must be in past
     if (timestamp > new Date().valueOf()) {
+        console.log('Timestamp in future');
         return false;
     }
 
     // timestamp must not be stale
     if (new Date().valueOf() - timestamp > MAX_SECONDS*1000) {
+        console.log('Stale timestamp (' + timestamp + ' vs ' + new Date().valueOf() + ')');
         return false;
     }
 

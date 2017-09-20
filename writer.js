@@ -30,6 +30,7 @@ function init(wss) {
             // forbid unauthorized access
             if (!validate.validate(time, signature)) {
                 console.log('Invalid access');
+                ws.send('Invalid access');
                 ws.close();
                 return;
             }
