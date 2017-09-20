@@ -88,7 +88,7 @@ function handleMessage(message, ws) {
                 arity: arity
             },
             fields: {
-                value: data[key]
+                value: data[key.toLowerCase().replace(/\s+/g, '_')]
             },
             timestamp: timestamp
         });
