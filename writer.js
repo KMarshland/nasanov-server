@@ -67,9 +67,18 @@ function handleMessage(message, ws) {
     const timestamp = new Date(data.timestamp);
     const mission = data.mission;
     const id = data.id;
-    const arity = Object.keys(data).length;
 
-    let points = [];
+    let points = [{
+        measurement: 'latency',
+        tags: {
+            mission: mission,
+            id: id
+        },
+        fields: {
+            value: new Date().valueOf() - timestamp.valueOf()
+        },
+        timestamp: timestamp
+    }];
 
     for (let key in data) {
         if (!data.hasOwnProperty(key)) {
@@ -84,8 +93,7 @@ function handleMessage(message, ws) {
             measurement: key,
             tags: {
                 mission: mission,
-                id: id,
-                arity: arity
+                id: id
             },
             fields: {
                 value: data[key.toLowerCase().replace(/\s+/g, '_')]
