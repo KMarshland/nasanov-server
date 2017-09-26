@@ -121,18 +121,6 @@ function handleMessage(message, ws) {
 
             // send a confirmation that we stored the message with that id
             ws.send(id + ':success');
-
-            WSS.clients.forEach(function each(client) {
-                if (client.readyState !== WebSocket.OPEN) {
-                    return;
-                }
-
-                if (!client.subscribed) {
-                    return;
-                }
-
-                client.send(JSON.stringify(data));
-            });
         }).catch(function (err) {
             console.error(`Error saving data to InfluxDB! ${err.stack}`);
 
@@ -150,6 +138,18 @@ function handleMessage(message, ws) {
         }
 
         ws.send(id + ':error:' + e);
+    });
+
+    WSS.clients.forEach(function each(client) {
+        if (client.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        if (!client.subscribed) {
+            return;
+        }
+
+        client.send(JSON.stringify(data));
     });
 
 }
