@@ -22,6 +22,9 @@ This requires:
 
 To test it out, run `npm run test`, which starts (in parallel) influxdb, a reader, a writer, and a client that both writes and reads. 
 
+## Using it to develop on HABMC
+Run `npm run serve`. This will expose
+
 ## To write as a client
 
 See [test.js](test.js) for example code.
@@ -58,7 +61,7 @@ The following example would send four keys: `altitude_barometer`, `altitude_gps`
 ### Verifying that a transmission was written
 After a successful write, the websocket will receive a message with the id of the transmission that was sent, eg `b82c6a52-e8fc-4e3a-91ec-36c0565d5b8f:success` or `b82c6a52-e8fc-4e3a-91ec-36c0565d5b8f:error:Why`.
 
-### Hearbeat
+### Heartbeat
 Every 5 seconds, the writer will send a message with the current timestamp
 
 ## To read as a client
