@@ -28,7 +28,7 @@ let influx;
 let connected = false;
 function connect() {
     return new Promise(function (fullfill, reject) {
-        influx = new Influx.InfluxDB({              // do u set all these in docker-compose?
+        influx = new Influx.InfluxDB({
             host: process.env.INFLUX_HOST,
             port: process.env.INFLUX_PORT,
             username: process.env.INFLUX_USERNAME,

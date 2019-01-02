@@ -14,14 +14,14 @@ function init(server) {
     function autoclose(ws) {
         ws.close();
     }
-    wss.on('connection', autoclose);                //creates listener for connection event
+    wss.on('connection', autoclose);
 
     WSS = wss;
 
     influxConnection.then(function () {
         console.log('nasonov-writer connected');
 
-        wss.removeListener('connection', autoclose);    //removes autoclose from connection listener
+        wss.removeListener('connection', autoclose);
 
         wss.on('connection', function connected(ws, req) {
             const urlParts = req.url.split('/');
@@ -29,7 +29,7 @@ function init(server) {
             let signature = urlParts[2];
 
             // forbid unauthorized access
-            if (!validate.validate(time, signature)) { //explore more
+            if (!validate.validate(time, signature)) {
                 console.log('Invalid access');
                 ws.send('Invalid access');
                 ws.close();
@@ -48,7 +48,7 @@ function init(server) {
                 clearInterval(interval);
             });
 
-            let type = urlParts[3];         //?
+            let type = urlParts[3];
             if (type == 'listen') {
                 ws.subscribed = true;
                 return;
@@ -90,7 +90,7 @@ function handleMessage(message, ws) {
             continue;
         }
 
-        points.push({                   // points is arry of objects?
+        points.push({
             measurement: key,
             tags: {
                 mission: mission,
@@ -104,7 +104,7 @@ function handleMessage(message, ws) {
     }
 
     // log
-    (function () {                  // why encapsulate this in function?
+    (function () {
         console.log('nasanov-writer receive');
 
         if (ws.readyState !== WebSocket.OPEN) {
@@ -141,12 +141,12 @@ function handleMessage(message, ws) {
         ws.send(id + ':error:' + e);
     });
 
-    WSS.clients.forEach(function each(client) {             //multiple things connected to one websocket?
+    WSS.clients.forEach(function each(client) {
         if (client.readyState !== WebSocket.OPEN) {
             return;
         }
 
-        if (!client.subscribed) {           // ?
+        if (!client.subscribed) {
             return;
         }
 

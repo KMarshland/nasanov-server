@@ -13,8 +13,8 @@ function init(server) {
     console.log('Initializing nasonov-reader');
     const wss = new WebSocket.Server({server});
 
-    WSS = wss;                                              // purpose?
-    wss.on('connection', function connected(ws, req) {});   // what does this do?
+    WSS = wss;
+    wss.on('connection', function connected(ws, req) {});
 
     server.on('request', (request, response) => {connectToInflux(request, response)});
 
@@ -163,7 +163,7 @@ function connectToWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
 
-    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');        //timestamp? sig? and writer_url?
+    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');
 
     let closeTimeout = null;
 
@@ -191,7 +191,7 @@ function connectToWriter() {
             console.log('Heartbeat');
 
             if (closeTimeout) {
-                clearTimeout(closeTimeout);     // what do all this timeout stuff do?
+                clearTimeout(closeTimeout);
             }
 
             closeTimeout = setTimeout(function () {
@@ -214,12 +214,12 @@ function handlePoint(point) {
 
     console.log('nasanov-reader full point');
 
-    WSS.clients.forEach(function each(client) {             // multiple clients connected to websocket? knows them all?
+    WSS.clients.forEach(function each(client) {
         if (client.readyState !== WebSocket.OPEN) {
             return;
         }
 
-        client.send(JSON.stringify(point));         // is point still the json file?
+        client.send(JSON.stringify(point));
     });
 }
 
