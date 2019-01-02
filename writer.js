@@ -7,20 +7,21 @@ const HEARTBEAT_INTERVAL = 5000;
 
 let WSS;
 
-function init(wss) {
+function init(server) {
     console.log('Initializing nasonov-writer');
+    const wss = new WebSocket.Server({server});
 
     function autoclose(ws) {
         ws.close();
     }
-    wss.on('connection', autoclose);
+    wss.on('connection', autoclose);                //creates listener for connection event
 
     WSS = wss;
 
     influxConnection.then(function () {
         console.log('nasonov-writer connected');
 
-        wss.removeListener('connection', autoclose);
+        wss.removeListener('connection', autoclose);    //removes autoclose from connection listener
 
         wss.on('connection', function connected(ws, req) {
             const urlParts = req.url.split('/');
@@ -28,7 +29,7 @@ function init(wss) {
             let signature = urlParts[2];
 
             // forbid unauthorized access
-            if (!validate.validate(time, signature)) {
+            if (!validate.validate(time, signature)) { //explore more
                 console.log('Invalid access');
                 ws.send('Invalid access');
                 ws.close();
@@ -47,7 +48,7 @@ function init(wss) {
                 clearInterval(interval);
             });
 
-            let type = urlParts[3];
+            let type = urlParts[3];         //?
             if (type == 'listen') {
                 ws.subscribed = true;
                 return;
@@ -89,7 +90,7 @@ function handleMessage(message, ws) {
             continue;
         }
 
-        points.push({
+        points.push({                   // points is arry of objects?
             measurement: key,
             tags: {
                 mission: mission,
@@ -103,7 +104,7 @@ function handleMessage(message, ws) {
     }
 
     // log
-    (function () {
+    (function () {                  // why encapsulate this in function?
         console.log('nasanov-writer receive');
 
         if (ws.readyState !== WebSocket.OPEN) {
@@ -140,12 +141,12 @@ function handleMessage(message, ws) {
         ws.send(id + ':error:' + e);
     });
 
-    WSS.clients.forEach(function each(client) {
+    WSS.clients.forEach(function each(client) {             //multiple things connected to one websocket?
         if (client.readyState !== WebSocket.OPEN) {
             return;
         }
 
-        if (!client.subscribed) {
+        if (!client.subscribed) {           // ?
             return;
         }
 

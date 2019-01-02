@@ -6,7 +6,7 @@ const crypto = require('crypto');
 /*
  * Digests and hmacs a given timestamp
  */
-function sign(timestamp) {
+function sign(timestamp) {          // what does this do?
     const hmac = crypto.createHmac('sha256', process.env.NASANOV_SECRET);
     hmac.update(timestamp.toString());
     return hmac.digest('hex');

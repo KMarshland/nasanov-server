@@ -1,4 +1,6 @@
 const WebSocket = require('ws');
+const influxConnection = require('./influx.js');
+
 
 const validate = require('./validate.js');
 
@@ -7,20 +9,161 @@ const CLOSE_TIMEOUT = 10000;
 
 let WSS;
 
-function init(wss) {
+function init(server) {
     console.log('Initializing nasonov-reader');
+    const wss = new WebSocket.Server({server});
 
-    WSS = wss;
-    wss.on('connection', function connected(ws, req) {});
+    WSS = wss;                                              // purpose?
+    wss.on('connection', function connected(ws, req) {});   // what does this do?
+
+    server.on('request', (request, response) => {connectToInflux(request, response)});
 
     connectToWriter();
+}
+
+function connectToInflux(request, response) {
+
+    if(request.method === 'GET') {
+
+        let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
+
+        if(requestQuery.pathname.search('/index') > 0) {
+
+            let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/index'));
+
+            if (isNaN(mission)) {
+                return;
+            }
+
+            influxConnection.then(function (influx) {
+
+                influx.getMeasurements().then(names => {
+
+                    let query = `select * from`;
+                    names.forEach(name => {
+                        query += ` ${name},`;
+                    });
+                    query = query.slice(0, -1);
+                    query += ` where mission = '${mission}'`;
+
+                    influx.query(query).then(result => {
+
+                        let ids = {};
+                        result.forEach(measure => {
+                            if (!ids.hasOwnProperty(measure.id)) {
+                                ids[measure.id] = measure.time;
+                            }
+                        });
+
+                        response.setHeader("Access-Control-Allow-Origin", '*');
+                        response.end(JSON.stringify(ids));
+
+                    }).catch(function (err) {
+                        console.error(`Error querying data from InfluxDB! ${err.stack}`);
+
+                        if (WSS.readyState !== WebSocket.OPEN) {
+                            return;
+                        }
+
+                        WSS.send(id + ':error:' + e);
+                    });
+                }).catch(function (err) {
+                    console.error(`Error getting measurements! ${err.stack}`);
+
+                    if (WSS.readyState !== WebSocket.OPEN) {
+                        return;
+                    }
+
+                    WSS.send(id + ':error:' + e);
+                });
+            }).catch(function (err) {
+                console.error(`Error connecting to InfluxDB! ${err.stack}`);
+
+                if (WSS.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                WSS.send(id + ':error:' + e);
+            });
+
+        } else {
+
+            let mission = requestQuery.pathname.substring(1);
+
+            if (isNaN(mission)) {
+                return;
+            }
+
+            let ids = requestQuery.searchParams.getAll('ids[]');
+
+            influxConnection.then(function (influx) {
+
+                influx.getMeasurements().then(names => {
+
+                    let queries = [];
+                    ids.forEach(id => {
+
+                        let query = `select * from`;
+                        names.forEach(name => {
+                            query += ` ${name},`;
+                        });
+                        query = query.slice(0, -1);
+                        query += ` where (mission = '${mission}') and (id = '${id}')`;
+                        queries.push(query);
+
+                    });
+
+                    influx.query(queries).then(result => {
+
+                        let transmissions = [];
+                        result.forEach(point => {
+                            let transmission = {};
+                            let names = point.groupRows.map((groupRow) => groupRow.name);
+                            point.forEach(measurement => {
+                                transmission[names.shift()] = measurement.value;
+                            });
+                            transmissions.push(transmission);
+                        });
+
+                        response.setHeader("Access-Control-Allow-Origin", '*');
+                        response.end(JSON.stringify(transmissions));
+
+                    }).catch(function (err) {
+                        console.error(`Error querying data from InfluxDB! ${err.stack}`);
+
+                        if (WSS.readyState !== WebSocket.OPEN) {
+                            return;
+                        }
+
+                        WSS.send(id + ':error:' + e);
+                    });
+                }).catch(function (err) {
+                    console.error(`Error getting measurements! ${err.stack}`);
+
+                    if (WSS.readyState !== WebSocket.OPEN) {
+                        return;
+                    }
+
+                    WSS.send(id + ':error:' + e);
+                });
+            }).catch(function (err) {
+                console.error(`Error connecting to InfluxDB! ${err.stack}`);
+
+                if (WSS.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                WSS.send(id + ':error:' + e);
+            });
+        }
+    }
 }
 
 function connectToWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
 
-    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');
+    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');        //timestamp? sig? and writer_url?
 
     let closeTimeout = null;
 
@@ -48,7 +191,7 @@ function connectToWriter() {
             console.log('Heartbeat');
 
             if (closeTimeout) {
-                clearTimeout(closeTimeout);
+                clearTimeout(closeTimeout);     // what do all this timeout stuff do?
             }
 
             closeTimeout = setTimeout(function () {
@@ -68,18 +211,15 @@ function connectToWriter() {
  */
 function handlePoint(point) {
     // if the timestamp is old, ignore the point
-    if (point.timestamp < new Date().valueOf() - MAX_RECENCY*1000) {
-        return;
-    }
 
     console.log('nasanov-reader full point');
 
-    WSS.clients.forEach(function each(client) {
+    WSS.clients.forEach(function each(client) {             // multiple clients connected to websocket? knows them all?
         if (client.readyState !== WebSocket.OPEN) {
             return;
         }
 
-        client.send(JSON.stringify(point));
+        client.send(JSON.stringify(point));         // is point still the json file?
     });
 }
 
