@@ -7,9 +7,9 @@ const HEARTBEAT_INTERVAL = 5000;
 
 let WSS;
 
-function init(server) {
+function init() {
     console.log('Initializing nasonov-writer');
-    const wss = new WebSocket.Server({server});
+    const wss = new WebSocket.Server({ port: process.env.PORT || 5000 });
 
     function autoclose(ws) {
         ws.close();

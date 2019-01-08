@@ -3,23 +3,25 @@
  * Figure out which kind of server you're initializing
  */
 let source;
-const http = require('http');
+let server;
 
 if (process.env.MODE == 'writer') {
     source = './writer.js';
+    server = require(source);
+    server.init();
+
 } else {
     source = './reader.js';
     const http = require('http');
+    let httpServer = http.createServer();
+    httpServer.listen(process.env.PORT || 5000);
+
+    server = require(source);
+    server.init(httpServer);
 }
 
-const websocketServer = require(source);
 
 /*
  * Initialize the websocket server
  */
 
-const server = http.createServer();
-server.listen(process.env.PORT || 5000);
-
-
-websocketServer.init(server);

@@ -74,34 +74,41 @@ function initializeWriter() {
 }
 
 function initializeReader() {
-
-    (fetch(READER_URL_HTTP + '/' + MISSION + '/index').then(response1 => response1.json())).then(ids => {
-        let url = new URL(READER_URL_HTTP + '/' + MISSION);
-        for (let i = 0; i < 10; i++) {
-            url.searchParams.append('ids[]', Object.keys(ids)[i]);
-        }
-        fetch(url).then(response2 => response2.json()).then(body => console.log(body));
-    });
-
-    const readerSocket = new WebSocket(READER_URL);
-
-    readerSocket.on('error', function (error) {
-        console.log('Writer error', error);
-    });
-
-    readerSocket.on('close', function () {
-        console.log('Reader socket closed');
-        setTimeout(initializeReader, 500);
-    });
-
-    readerSocket.on('open', function open() {
-        readerSocket.on('message', function (transmission) {
-            transmission = JSON.parse(transmission);
-            receivedTransmissions[hash(transmission)] = new Date().valueOf();
-
-            console.log('nasanov-client receive');
-        });
-    });
+//
+//     (fetch(READER_URL_HTTP + '/' + MISSION + '/index').then(response1 => {
+//         if (response1.ok) { // res.status >= 200 && res.status < 300
+//             return response1;
+//         } else {
+//             console.log(response1.text());
+//         }
+//     })).then(response1 => response1.json()
+//     ).then(ids => {
+//         let url = new URL(READER_URL_HTTP + '/' + MISSION);
+//         for (let i = 0; i < 10; i++) {
+//             url.searchParams.append('ids[]', Object.keys(ids)[i]);
+//         }
+//         fetch(url).then(response2 => response2.json()).then(body => console.log(body));
+//     }).catch(err => console.error(err));
+//
+//     const readerSocket = new WebSocket(READER_URL);
+//
+//     readerSocket.on('error', function (error) {
+//         console.log('Writer error', error);
+//     });
+//
+//     readerSocket.on('close', function () {
+//         console.log('Reader socket closed');
+//         setTimeout(initializeReader, 500);
+//     });
+//
+//     readerSocket.on('open', function open() {
+//         readerSocket.on('message', function (transmission) {
+//             transmission = JSON.parse(transmission);
+//             receivedTransmissions[hash(transmission)] = new Date().valueOf();
+//
+//             console.log('nasanov-client receive');
+//         });
+//     });
 }
 
 /*
