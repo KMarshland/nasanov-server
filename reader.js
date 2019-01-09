@@ -50,7 +50,7 @@ function respondToHTTPReq(request, response) {
 
         if (!/^\d+$/.test(mission)) {
             response.writeHead(400);
-            response.end('Wrong mission provided' );
+            response.end('Wrong mission provided');
             return;
         }
 
@@ -92,20 +92,7 @@ function respondToIDsQuery(mission, response) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
 
         response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
-    }).catch(function (err) {
-        console.error(`Error getting measurements! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
-    }).catch(function (err) {
-        console.error(`Error connecting to InfluxDB! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
+        response.end(JSON.stringify({error: err.message}));;
     });
 }
 
@@ -122,7 +109,7 @@ function respondToTransmissionsQuery(mission, ids, response) {
 
             if (!/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(id)) {
                 response.writeHead(400);
-                response.end('Wrong ids provided' );
+                response.end('Wrong ids provided');
                 return;
             }
 
@@ -156,20 +143,7 @@ function respondToTransmissionsQuery(mission, ids, response) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
 
         response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
-    }).catch(function (err) {
-        console.error(`Error getting measurements! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
-    }).catch(function (err) {
-        console.error(`Error connecting to InfluxDB! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: id + ':error:' + e}));
-
+        response.end(JSON.stringify({error: err.message}));;
     });
 }
 
@@ -225,6 +199,9 @@ function connectToWriter() {
  */
 function handlePoint(point) {
     // if the timestamp is old, ignore the point
+    if (point.timestamp < new Date().valueOf() - MAX_RECENCY*1000) {
+        return;
+    }
 
     console.log('nasanov-reader full point');
 
