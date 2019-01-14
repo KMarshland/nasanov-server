@@ -1,4 +1,6 @@
 const WebSocket = require('ws');
+const influxConnection = require('./influx.js');
+
 
 const validate = require('./validate.js');
 
@@ -7,13 +9,142 @@ const CLOSE_TIMEOUT = 10000;
 
 let WSS;
 
-function init(wss) {
+function init(server) {
     console.log('Initializing nasonov-reader');
+    const wss = new WebSocket.Server({ server });
 
     WSS = wss;
     wss.on('connection', function connected(ws, req) {});
 
+    server.on('request', respondToHTTPReq);
+
     connectToWriter();
+}
+
+function respondToHTTPReq(request, response) {
+
+    if (request.method !== 'GET') {
+        response.writeHead(400);
+        response.end(JSON.stringify({error: 'Cannot post to reader'}));
+        return;
+    }
+
+    response.setHeader("Access-Control-Allow-Origin", '*');
+    let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
+
+    if(requestQuery.pathname.search('/index') > 0) {
+
+        let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/index'));
+
+        if (!/^\d+$/.test(mission)) {
+            response.writeHead(400);
+            response.end('Wrong mission provided' );
+            return;
+        }
+
+        respondToIDsQuery(mission, response);
+
+    } else {
+
+        let mission = requestQuery.pathname.substring(1);
+
+        if (!/^\d+$/.test(mission)) {
+            response.writeHead(400);
+            response.end('Wrong mission provided');
+            return;
+        }
+
+        let ids = requestQuery.searchParams.getAll('ids[]');
+        respondToTransmissionsQuery(mission, ids, response);
+    }
+}
+
+function respondToIDsQuery(mission, response) {
+    let influx;
+
+    influxConnection.then(influxd => {
+        influx = influxd;
+        return influx.getMeasurements();
+
+    }).then((names) => {
+
+        let query = `select * from`;
+        names.forEach(name => {
+            query += ` ${name},`;
+        });
+        query = query.slice(0, -1);
+        query += ` where mission = '${mission}'`;
+
+        return influx.query(query);
+
+    }).then(result => {
+
+        let ids = {};
+        result.forEach(measure => {
+            if (!ids.hasOwnProperty(measure.id)) {
+                ids[measure.id] = measure.time;
+            }
+        });
+
+        response.end(JSON.stringify(ids));
+
+    }).catch(function (err) {
+        console.error(`Error querying data from InfluxDB! ${err.stack}`);
+
+        response.writeHead(500);
+        response.end(JSON.stringify({error: err.message}));;
+    });
+}
+
+function respondToTransmissionsQuery(mission, ids, response) {
+    let influx;
+
+    influxConnection.then(influxd => {
+        influx = influxd;
+        return influx.getMeasurements();
+
+    }).then(names => {
+        let queries = [];
+        ids.forEach(id => {
+
+            if (!/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(id)) {
+                response.writeHead(400);
+                response.end('Wrong ids provided');
+                return;
+            }
+
+            let query = `select * from`;
+            names.forEach(name => {
+                query += ` ${name},`;
+            });
+            query = query.slice(0, -1);
+            query += ` where (mission = '${mission}') and (id = '${id}')`;
+            queries.push(query);
+
+        });
+
+        return influx.query(queries);
+
+    }).then(result => {
+
+        let transmissions = [];
+        result.forEach(point => {
+            let transmission = {};
+            let names = point.groupRows.map((groupRow) => groupRow.name);
+            point.forEach(measurement => {
+                transmission[names.shift()] = measurement.value;
+            });
+            transmissions.push(transmission);
+        });
+
+        response.end(JSON.stringify(transmissions));
+
+    }).catch(function (err) {
+        console.error(`Error querying data from InfluxDB! ${err.stack}`);
+
+        response.writeHead(500);
+        response.end(JSON.stringify({error: err.message}));;
+    });
 }
 
 function connectToWriter() {

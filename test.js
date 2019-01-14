@@ -1,11 +1,14 @@
-
+const fetch = require('node-fetch');
 const RATE = 1; // in requests per second
 const DURATION = 3<<20; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 1000; // ms it accepts for latency between transmissions
-const KEY_COUNT = 100; // random keys to add to the transmission for benchmarking
+const KEY_COUNT = 20; // random keys to add to the transmission for benchmarking
+const MISSION = 1;
 
 const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.herokuapp.com' : 'ws://localhost:5240';
 const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5250';
+const READER_URL_HTTP = process.env.USE_PROD == 'TRUE' ? 'http://nasonov-reader.herokuapp.com' : 'http://localhost:5250';
+
 
 const WebSocket = require('ws');
 const utilities = require('./test_utilities.js');
@@ -16,7 +19,7 @@ let sentTransmissions = {};
 let receivedTransmissions = {};
 
 initializeWriter();
-initializeReader();
+setTimeout(initializeReader, 2000);
 
 function initializeWriter() {
     const timestamp = new Date().valueOf();
@@ -46,7 +49,7 @@ function initializeWriter() {
                 return;
             }
 
-            let transmission = utilities.randomTransmission(28, KEY_COUNT);
+            let transmission = utilities.randomTransmission(MISSION, KEY_COUNT);
             console.log('nasanov-client send');
 
             sentTransmissions[hash(transmission)] = new Date().valueOf();
@@ -71,6 +74,22 @@ function initializeWriter() {
 }
 
 function initializeReader() {
+
+    (fetch(READER_URL_HTTP + '/' + MISSION + '/index').then(response1 => {
+        if (response1.ok) { // res.status >= 200 && res.status < 300
+            return response1;
+        } else {
+            console.log(response1.text());
+        }
+    })).then(response1 => response1.json()
+    ).then(ids => {
+        let url = new URL(READER_URL_HTTP + '/' + MISSION);
+        for (let i = 0; i < 10; i++) {
+            url.searchParams.append('ids[]', Object.keys(ids)[i]);
+        }
+        fetch(url).then(response2 => response2.json()).then(body => console.log(body));
+    }).catch(err => console.error(err));
+
     const readerSocket = new WebSocket(READER_URL);
 
     readerSocket.on('error', function (error) {
