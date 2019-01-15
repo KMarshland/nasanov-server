@@ -90,9 +90,10 @@ function respondToIDsQuery(mission, response) {
 
     }).catch(function (err) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
+        console.error(err);
 
         response.writeHead(500);
-        response.end(JSON.stringify({error: err.message}));;
+        response.end(JSON.stringify({error: err.message}));
     });
 }
 
