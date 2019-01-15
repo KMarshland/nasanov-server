@@ -74,7 +74,7 @@ function respondToIDsQuery(mission, response) {
         });
         query = query.slice(0, -1);
         query += ` where mission = '${mission}'`;
-
+        console.log(query);
         return influx.query(query);
 
     }).then(result => {

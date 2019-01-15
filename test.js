@@ -3,7 +3,7 @@ const RATE = 1; // in requests per second
 const DURATION = 3<<20; // number of seconds it will send data for
 const ACCEPTABLE_LATENCY = 1000; // ms it accepts for latency between transmissions
 const KEY_COUNT = 20; // random keys to add to the transmission for benchmarking
-const MISSION = 1;
+const MISSION = 12;
 
 const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.herokuapp.com' : 'ws://localhost:5240';
 const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5250';
@@ -85,7 +85,9 @@ function initializeReader() {
     ).then(ids => {
         let url = new URL(READER_URL_HTTP + '/' + MISSION);
         for (let i = 0; i < 10; i++) {
-            url.searchParams.append('ids[]', Object.keys(ids)[i]);
+            if(typeof Object.keys(ids)[i] !== 'undefined') {
+                url.searchParams.append('ids[]', Object.keys(ids)[i]);
+            }
         }
         fetch(url).then(response2 => response2.json()).then(body => console.log(body));
     }).catch(err => console.error(err));
