@@ -68,7 +68,8 @@ function respondToIDsQuery(mission, response) {
 
     }).then((names) => {
 
-        console.log(names);
+        console.log(typeof names);
+        console.log(names.length);
         let query = `select * from`;
         names.forEach(name => {
             query += ` ${name},`;
