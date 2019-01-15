@@ -70,11 +70,9 @@ function respondToIDsQuery(mission, response) {
 
         console.log(typeof names);
         console.log(names.length);
-        let query = `select * from`;
-        names.forEach(name => {
-            query += ` ${name},`;
-        });
-        query = query.slice(0, -1);
+        let query = `select * from `;
+        let namesString = names.join(,);
+        query += namesString;
         query += ` where mission = '${mission}'`;
         console.log(query);
         return influx.query(query);
