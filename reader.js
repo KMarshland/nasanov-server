@@ -68,6 +68,11 @@ function respondToIDsQuery(mission, response) {
 
     }).then((names) => {
 
+        if (names.length === 0) {
+            response.end(JSON.stringify({}));
+            return null;
+        }
+
         console.log(typeof names);
         console.log(names.length);
         let query = `select * from `;
@@ -80,11 +85,14 @@ function respondToIDsQuery(mission, response) {
     }).then(result => {
 
         let ids = {};
-        result.forEach(measure => {
-            if (!ids.hasOwnProperty(measure.id)) {
-                ids[measure.id] = measure.time;
-            }
-        });
+
+        if (typeof result !== 'null') {
+            result.forEach(measure => {
+                if (!ids.hasOwnProperty(measure.id)) {
+                    ids[measure.id] = measure.time;
+                }
+            });
+        }
 
         response.end(JSON.stringify(ids));
 
