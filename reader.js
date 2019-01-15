@@ -85,7 +85,7 @@ function respondToIDsQuery(mission, response) {
     }).then(result => {
 
         let ids = {};
-
+        console.log(typeof result);
         if (typeof result !== 'null') {
             result.forEach(measure => {
                 if (!ids.hasOwnProperty(measure.id)) {
