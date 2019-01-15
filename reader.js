@@ -64,6 +64,8 @@ function respondToIDsQuery(mission, response) {
 
     influxConnection.then(influxd => {
         influx = influxd;
+        influx.query(`SHOW DATABASES`).then(x => {console.log('y'); console.log(x)});
+        influx.query(`SHOW MEASUREMENTS`).then(x => {console.log('t'); console.log(x)});
         return influx.getMeasurements();
 
     }).then((names) => {
@@ -73,20 +75,17 @@ function respondToIDsQuery(mission, response) {
             return null;
         }
 
-        console.log(typeof names);
-        console.log(names.length);
         let query = `select * from `;
         let namesString = names.join(',');
         query += namesString;
         query += ` where mission = '${mission}'`;
-        console.log(query);
         return influx.query(query);
 
     }).then(result => {
 
         let ids = {};
-        console.log(typeof result);
-        if (typeof result !== 'null') {
+
+        if (result !== 'null') {
             result.forEach(measure => {
                 if (!ids.hasOwnProperty(measure.id)) {
                     ids[measure.id] = measure.time;
