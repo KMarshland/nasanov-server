@@ -64,8 +64,7 @@ function respondToIDsQuery(mission, response) {
 
     influxConnection.then(influxd => {
         influx = influxd;
-        influx.query(`SHOW DATABASES`).then(x => {console.log('y'); console.log(x)});
-        influx.query(`SHOW MEASUREMENTS`).then(x => {console.log('t'); console.log(x)});
+        influx.query(`SHOW MEASUREMENTS ON defaultdb`).then(x => {console.log('t'); console.log(x)});
         return influx.getMeasurements();
 
     }).then((names) => {
