@@ -71,7 +71,7 @@ function respondToIDsQuery(mission, response) {
         console.log(typeof names);
         console.log(names.length);
         let query = `select * from `;
-        let namesString = names.join(,);
+        let namesString = names.join(',');
         query += namesString;
         query += ` where mission = '${mission}'`;
         console.log(query);
