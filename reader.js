@@ -64,7 +64,7 @@ function respondToIDsQuery(mission, response) {
 
     influxConnection.then(influxd => {
         influx = influxd;
-        influx.query(`CREATE RETENTION POLICY 'forever' ON 'defaultdb' DURATION INF REPLICATION 1 DEFAULT`).then();
+        influx.query(`CREATE RETENTION POLICY 'forever' ON 'defaultdb' DURATION INF REPLICATION 1 DEFAULT`).then(y => influx.query(`SHOW RETENTION POLICIES ON 'defaultdb'`).then(x => console.log(x)));
         return influx.getMeasurements();
 
     }).then((names) => {
