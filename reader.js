@@ -64,8 +64,7 @@ function respondToIDsQuery(mission, response) {
 
     influxConnection.then(influxd => {
         influx = influxd;
-        influx.query(`DROP RETENTION POLICY always ON "defaultdb"`);
-        influx.query(`ALTER RETENTION POLICY default_retention_policy ON "defaultdb" DURATION INF REPLICATION 1 DEFAULT`).then(y => influx.query(`SHOW RETENTION POLICIES ON "defaultdb"`).then(x => console.log(x)));
+        influx.query(`ALTER RETENTION POLICY default_retention_policy ON "defaultdb" DURATION INF REPLICATION 1 SHARD DURATION 168h0m0s DEFAULT`).then(y => influx.query(`SHOW RETENTION POLICIES ON "defaultdb"`).then(x => console.log(x)));
         return influx.getMeasurements();
 
     }).then((names) => {
