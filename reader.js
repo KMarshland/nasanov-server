@@ -64,11 +64,7 @@ function respondToIDsQuery(mission, response) {
 
     influxConnection.then(influxd => {
         influx = influxd;
-        influx.createRetentionPolicy('always', {
-            duration: 'INF',
-            replication: 1
-        });
-        influx.showRetentionPolicies().then(x => console.log(x));
+        influx.query(`CREATE RETENTION POLICY always ON "defaultdb" DURATION INF REPLICATION 1`).then(y => influx.query(`SHOW RETENTION POLICIES ON "defaultdb"`).then(x => console.log(x)));
         return influx.getMeasurements();
 
     }).then((names) => {
@@ -88,7 +84,7 @@ function respondToIDsQuery(mission, response) {
 
         let ids = {};
 
-        if (result !== 'null') {
+        if (result !== null) {
             result.forEach(measure => {
                 if (!ids.hasOwnProperty(measure.id)) {
                     ids[measure.id] = measure.time;
