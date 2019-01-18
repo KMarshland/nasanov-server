@@ -135,8 +135,23 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
 
     }).then(result => {
         let transmissions = {};
-        result.forEach(timeGroup => {
-            timeGroup.groupRows.forEach((group) => {
+
+        if (Array.isArray(result[0])) {
+            result.forEach(timeGroup => {
+                timeGroup.groupRows.forEach((group) => {
+                    const name = group.name;
+
+                    group.rows.forEach((point) => {
+                        if (!transmissions[point.id]) {
+                            transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission)};
+                        }
+
+                        transmissions[point.id][name] = point.value;
+                    })
+                });
+            });
+        } else {
+            result.groupRows.forEach((group) => {
                 const name = group.name;
 
                 group.rows.forEach((point) => {
@@ -147,7 +162,8 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
                     transmissions[point.id][name] = point.value;
                 })
             });
-        });
+        }
+
 
         response.end(JSON.stringify(Object.values(transmissions)));
 
