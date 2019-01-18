@@ -8,6 +8,7 @@ const MAX_RECENCY = 10; // ignore points that are more than this many seconds ol
 const CLOSE_TIMEOUT = 10000;
 
 let WSS;
+let keys = [];
 
 function init(server) {
     console.log('Initializing nasonov-reader');
@@ -15,6 +16,12 @@ function init(server) {
 
     WSS = wss;
     wss.on('connection', function connected(ws, req) {});
+
+    influxConnection.then(influx =>
+        influx.getMeasurements()
+    ).then(names => {
+        keys = names;
+    });
 
     server.on('request', respondToHTTPReq);
 
@@ -31,7 +38,7 @@ function respondToHTTPReq(request, response) {
 
     response.setHeader("Access-Control-Allow-Origin", '*');
     let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
-
+    console.log(requestQuery.search);
     if(requestQuery.pathname.search('/index') > 0) {
 
         let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/index'));
@@ -44,7 +51,7 @@ function respondToHTTPReq(request, response) {
 
         respondToIDsQuery(mission, response);
 
-    } else {
+    } else if (requestQuery.search.includes('?timestamps%5B%5D=') > 0) {
 
         let mission = requestQuery.pathname.substring(1);
 
@@ -54,30 +61,30 @@ function respondToHTTPReq(request, response) {
             return;
         }
 
-        let ids = requestQuery.searchParams.getAll('ids[]');
-        respondToTransmissionsQuery(mission, ids, response);
+        let timestamps = requestQuery.searchParams.getAll('timestamps[]');
+        respondToTransmissionsQuery(mission, timestamps, response);
+
+    } else {
+        response.writeHead(400);
+        response.end(JSON.stringify({error: 'Cannot do whatever youre doing to reader'}));
+        return;
     }
 }
 
 function respondToIDsQuery(mission, response) {
-    let influx;
 
-    influxConnection.then(influxd => {
-        influx = influxd;
-        influx.query(`ALTER RETENTION POLICY default_retention_policy ON "defaultdb" DURATION INF REPLICATION 1 SHARD DURATION 168h0m0s DEFAULT`).then(y => influx.query(`SHOW RETENTION POLICIES ON "defaultdb"`).then(x => console.log(x)));
-        return influx.getMeasurements();
+    influxConnection.then(influx => {
 
-    }).then((names) => {
-
-        if (names.length === 0) {
+        if (keys.length === 0) {
             response.end(JSON.stringify({}));
             return null;
         }
 
         let query = `select * from `;
-        let namesString = names.join(',');
+        let namesString = keys.join(',');
         query += namesString;
         query += ` where mission = '${mission}'`;
+        console.log(query);
         return influx.query(query);
 
     }).then(result => {
@@ -87,11 +94,10 @@ function respondToIDsQuery(mission, response) {
         if (result !== null) {
             result.forEach(measure => {
                 if (!ids.hasOwnProperty(measure.id)) {
-                    ids[measure.id] = measure.time;
+                    ids[measure.id] = measure.time._nanoISO;
                 }
             });
         }
-
         response.end(JSON.stringify(ids));
 
     }).catch(function (err) {
@@ -103,48 +109,47 @@ function respondToIDsQuery(mission, response) {
     });
 }
 
-function respondToTransmissionsQuery(mission, ids, response) {
-    let influx;
+function respondToTransmissionsQuery(mission, timestamps, response) {  // by time instead of id
 
-    influxConnection.then(influxd => {
-        influx = influxd;
-        return influx.getMeasurements();
+    influxConnection.then(influx => {
 
-    }).then(names => {
+        if (keys.length === 0) {
+            response.end(JSON.stringify({}));
+            return null;
+        }
+
         let queries = [];
-        ids.forEach(id => {
+        timestamps.forEach(timestamp => {
 
-            if (!/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i.test(id)) {
-                response.writeHead(400);
-                response.end('Wrong ids provided');
-                return;
-            }
 
-            let query = `select * from`;
-            names.forEach(name => {
-                query += ` ${name},`;
-            });
-            query = query.slice(0, -1);
-            query += ` where (mission = '${mission}') and (id = '${id}')`;
+            let query = `select * from `;
+            let namesString = keys.join(',');
+            query += namesString;
+            query += ` where mission = '${mission}' and time >= '${timestamp.substring(0,timestamp.search(','))}' and time <= '${timestamp.substring(timestamp.search(',')+1)}'`;
+            console.log(query);
+
             queries.push(query);
-
         });
 
         return influx.query(queries);
 
     }).then(result => {
+        let transmissions = {};
+        result.forEach(timeGroup => {
+            timeGroup.groupRows.forEach((group) => {
+                const name = group.name;
 
-        let transmissions = [];
-        result.forEach(point => {
-            let transmission = {};
-            let names = point.groupRows.map((groupRow) => groupRow.name);
-            point.forEach(measurement => {
-                transmission[names.shift()] = measurement.value;
+                group.rows.forEach((point) => {
+                    if (!transmissions[point.id]) {
+                        transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission)};
+                    }
+
+                    transmissions[point.id][name] = point.value;
+                })
             });
-            transmissions.push(transmission);
         });
 
-        response.end(JSON.stringify(transmissions));
+        response.end(JSON.stringify(Object.values(transmissions)));
 
     }).catch(function (err) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
@@ -210,7 +215,17 @@ function handlePoint(point) {
         return;
     }
 
-    console.log('nasanov-reader full point');
+    for (let key in point) {
+        if (!point.hasOwnProperty(key) || keys.includes(key)) {
+            continue;
+        }
+        if (key == 'id' || key == 'timestamp' || key == 'mission') {
+            continue;
+        }
+        keys.push(key);
+    }
+
+        console.log('nasanov-reader full point');
 
     WSS.clients.forEach(function each(client) {
         if (client.readyState !== WebSocket.OPEN) {
