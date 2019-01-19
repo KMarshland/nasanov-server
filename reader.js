@@ -121,7 +121,7 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
         let queries = [];
         timestamps.forEach(timestamp => {
 
-            if (!/(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/.test(timestamp)) {
+            if (!/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(timestamp)) {
                 response.writeHead(400);
                 response.end('Wrong timestamps provided');
                 return;
@@ -148,7 +148,7 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
 
                     group.rows.forEach((point) => {
                         if (!transmissions[point.id]) {
-                            transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission), 'time' : new Date(point.time._nanoISO).valueOf()};
+                            transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission), 'time' : `${new Date(point.time._nanoISO).valueOf()}}`};
                         }
 
                         transmissions[point.id][name] = point.value;
