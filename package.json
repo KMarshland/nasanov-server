@@ -13,7 +13,7 @@
     "start": "node main.js",
 
     "writer": "MODE=writer PORT=5240 node main.js",
-    "reader": "MODE=reader PORT=5251 WRITER_URL=ws://localhost:5240 node main.js",
+    "reader": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 node main.js",
     "tester": "node test.js",
     "influx": "influxd",
 

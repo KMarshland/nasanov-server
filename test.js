@@ -6,8 +6,8 @@ const KEY_COUNT = 20; // random keys to add to the transmission for benchmarking
 const MISSION = 1;
 
 const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.herokuapp.com' : 'ws://localhost:5240';
-const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5251';
-const READER_URL_HTTP = process.env.USE_PROD == 'TRUE' ? 'http://nasonov-reader.herokuapp.com' : 'http://localhost:5251';
+const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5250';
+const READER_URL_HTTP = process.env.USE_PROD == 'TRUE' ? 'http://nasonov-reader.herokuapp.com' : 'http://localhost:5250';
 
 
 const WebSocket = require('ws');
@@ -83,7 +83,7 @@ function initializeReader() {
         }
     })).then(response1 => response1.json()
     ).then(ids => {
-        let url = new URL(READER_URL_HTTP + '/' + MISSION);
+        let url = new URL(READER_URL_HTTP + '/' + MISSION + '/data');
         let vals = Object.values(ids);
         for (let i = 6; i < 100; i+=10) {
             if(typeof vals[i] !== 'undefined') {
