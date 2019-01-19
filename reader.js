@@ -164,7 +164,7 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
                             };
                         }
 
-                        transmissins[point.id][name] = point.value;
+                        transmissions[point.id][name] = point.value;
                     })
                 });
             });
