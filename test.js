@@ -19,7 +19,7 @@ let sentTransmissions = {};
 let receivedTransmissions = {};
 
 initializeWriter();
-setTimeout(initializeReader, 2000);
+setTimeout(initializeReader, 4000);
 
 function initializeWriter() {
     const timestamp = new Date().valueOf();
@@ -83,10 +83,14 @@ function initializeReader() {
         }
     })).then(response1 => response1.json()
     ).then(ids => {
-        let url = new URL(READER_URL_HTTP + '/' + MISSION);
-        for (let i = 0; i < 10; i++) {
-            url.searchParams.append('ids[]', Object.keys(ids)[i]);
+        let url = new URL(READER_URL_HTTP + '/' + MISSION + '/data');
+        let vals = Object.values(ids);
+        for (let i = 6; i < 100; i+=10) {
+            if(typeof vals[i] !== 'undefined') {
+                url.searchParams.append('timestamps[]', `${vals[i-6]},${vals[i]}`);
+            }
         }
+        console.log(url);
         fetch(url).then(response2 => response2.json()).then(body => console.log(body));
     }).catch(err => console.error(err));
 
