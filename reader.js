@@ -185,6 +185,7 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
             });
         }
 
+        response.setHeader("Content-Type", 'application/json');
 
         response.end(JSON.stringify(Object.values(transmissions)));
 
