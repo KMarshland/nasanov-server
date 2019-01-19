@@ -177,7 +177,8 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
                         transmissions[point.id] = {
                             'Human Time':point.time._nanoISO,
                             mission : Number(mission),
-                            'timestamp' : new Date(point.time._nanoISO).valueOf()
+                            'timestamp' : new Date(point.time._nanoISO).valueOf(),
+                            id : point.id
                         };
                     }
 
