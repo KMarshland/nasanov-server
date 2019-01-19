@@ -30,13 +30,21 @@ function init(server) {
 
 function respondToHTTPReq(request, response) {
 
+    response.setHeader("Access-Control-Allow-Origin", '*');
+
+    if(request.method === 'OPTIONS') {
+        response.writeHead(200);
+        response.end();
+        return;
+    }
+
     if (request.method !== 'GET') {
         response.writeHead(400);
         response.end(JSON.stringify({error: 'Cannot post to reader'}));
         return;
     }
 
-    response.setHeader("Access-Control-Allow-Origin", '*');
+
     let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
     console.log(requestQuery.search);
     if(requestQuery.pathname.search('/index') > 0) {
