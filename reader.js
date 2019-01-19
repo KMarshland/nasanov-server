@@ -148,7 +148,11 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
 
                     group.rows.forEach((point) => {
                         if (!transmissions[point.id]) {
-                            transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission), 'time' : `${new Date(point.time._nanoISO).valueOf()}}`};
+                            transmissions[point.id] = {
+                                'Human Time': point.time._nanoISO,
+                                mission : Number(mission),
+                                'timestamp' : new Date(point.time._nanoISO).valueOf()
+                            };
                         }
 
                         transmissions[point.id][name] = point.value;
@@ -161,7 +165,11 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
 
                 group.rows.forEach((point) => {
                     if (!transmissions[point.id]) {
-                        transmissions[point.id] = {'Human Time':point.time._nanoISO, mission : Number(mission)};
+                        transmissions[point.id] = {
+                            'Human Time':point.time._nanoISO,
+                            mission : Number(mission),
+                            'timestamp' : new Date(point.time._nanoISO).valueOf()
+                        };
                     }
 
                     transmissions[point.id][name] = point.value;
@@ -246,7 +254,7 @@ function handlePoint(point) {
         keys.push(key);
     }
 
-        console.log('nasanov-reader full point');
+    console.log('nasanov-reader full point');
 
     WSS.clients.forEach(function each(client) {
         if (client.readyState !== WebSocket.OPEN) {
