@@ -98,15 +98,18 @@ function respondToIDsQuery(mission, response) {
     }).then(result => {
 
         let ids = [];
+        let idsPushed = new Set();
 
         if (result !== null) {
             result.forEach(measure => {
-                if (!ids.includes(measure.id)) {
+                if (!idsPushed.has(measure.id)) {
                     ids.push([measure.id, measure.time._nanoISO]);
+                    idsPushed.add(measure).id;
                 }
             });
         }
-        response.end(JSON.stringify({index: ids}));
+        let resp = {'index': ids};
+        response.end(JSON.stringify(resp));
 
     }).catch(function (err) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
