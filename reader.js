@@ -30,13 +30,21 @@ function init(server) {
 
 function respondToHTTPReq(request, response) {
 
+    response.setHeader("Access-Control-Allow-Origin", '*');
+
+    if(request.method === 'OPTIONS') {
+        response.writeHead(200);
+        response.end();
+        return;
+    }
+
     if (request.method !== 'GET') {
         response.writeHead(400);
         response.end(JSON.stringify({error: 'Cannot post to reader'}));
         return;
     }
 
-    response.setHeader("Access-Control-Allow-Origin", '*');
+
     let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
     console.log(requestQuery.search);
     if(requestQuery.pathname.search('/index') > 0) {
@@ -89,16 +97,19 @@ function respondToIDsQuery(mission, response) {
 
     }).then(result => {
 
-        let ids = {};
+        let ids = [];
+        let idsPushed = new Set();
 
         if (result !== null) {
             result.forEach(measure => {
-                if (!ids.hasOwnProperty(measure.id)) {
-                    ids[measure.id] = measure.time._nanoISO;
+                if (!idsPushed.has(measure.id)) {
+                    ids.push([measure.id, measure.time._nanoISO]);
+                    idsPushed.add(measure).id;
                 }
             });
         }
-        response.end(JSON.stringify(ids));
+        let resp = {'index': ids};
+        response.end(JSON.stringify(resp));
 
     }).catch(function (err) {
         console.error(`Error querying data from InfluxDB! ${err.stack}`);
@@ -151,7 +162,8 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
                             transmissions[point.id] = {
                                 'Human Time': point.time._nanoISO,
                                 mission : Number(mission),
-                                'timestamp' : new Date(point.time._nanoISO).valueOf()
+                                timestamp : new Date(point.time._nanoISO).valueOf(),
+                                id : point.id
                             };
                         }
 
@@ -168,7 +180,8 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
                         transmissions[point.id] = {
                             'Human Time':point.time._nanoISO,
                             mission : Number(mission),
-                            'timestamp' : new Date(point.time._nanoISO).valueOf()
+                            'timestamp' : new Date(point.time._nanoISO).valueOf(),
+                            id : point.id
                         };
                     }
 
@@ -177,6 +190,7 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
             });
         }
 
+        response.setHeader("Content-Type", 'application/json');
 
         response.end(JSON.stringify(Object.values(transmissions)));
 
