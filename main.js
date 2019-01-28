@@ -1,3 +1,4 @@
+require('newrelic');
 
 /*
  * Figure out which kind of server you're initializing
