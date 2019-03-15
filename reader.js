@@ -1,8 +1,8 @@
-const WebSocket = require('ws');
-const influxConnection = require('./influx.js');
+const WebSocket = require("ws");
+const influxConnection = require("./influx.js");
+const limit = parseInt(requestQuery.searchParams.get("limit"));
 
-
-const validate = require('./validate.js');
+const validate = require("./validate.js");
 
 const MAX_RECENCY = 10; // ignore points that are more than this many seconds old
 const CLOSE_TIMEOUT = 10000;
@@ -11,248 +11,263 @@ let WSS;
 let keys = [];
 
 function init(server) {
-    console.log('Initializing nasonov-reader');
-    const wss = new WebSocket.Server({ server });
+  console.log("Initializing nasonov-reader");
+  const wss = new WebSocket.Server({ server });
 
-    WSS = wss;
-    wss.on('connection', function connected(ws, req) {});
+  WSS = wss;
+  wss.on("connection", function connected(ws, req) {});
 
-    influxConnection.then(influx =>
-        influx.getMeasurements()
-    ).then(names => {
-        keys = names;
+  influxConnection
+    .then(influx => influx.getMeasurements())
+    .then(names => {
+      keys = names;
     });
 
-    server.on('request', respondToHTTPReq);
+  server.on("request", respondToHTTPReq);
 
-    connectToWriter();
+  connectToWriter();
 }
 
 function respondToHTTPReq(request, response) {
+  response.setHeader("Access-Control-Allow-Origin", "*");
 
-    response.setHeader("Access-Control-Allow-Origin", '*');
+  if (request.method === "OPTIONS") {
+    response.writeHead(200);
+    response.end();
+    return;
+  }
 
-    if(request.method === 'OPTIONS') {
-        response.writeHead(200);
-        response.end();
-        return;
+  if (request.method !== "GET") {
+    response.writeHead(400);
+    response.end(JSON.stringify({ error: "Cannot post to reader" }));
+    return;
+  }
+
+  let requestQuery = new URL(request.url, "https://habmc.stanfordssi.org/");
+  console.log(requestQuery.search);
+  if (requestQuery.pathname.search("/index") > 0) {
+    let mission = requestQuery.pathname.substring(
+      1,
+      requestQuery.pathname.search("/index")
+    );
+
+    if (!/^\d+$/.test(mission)) {
+      response.writeHead(400);
+      response.end("Wrong mission provided");
+      return;
     }
 
-    if (request.method !== 'GET') {
-        response.writeHead(400);
-        response.end(JSON.stringify({error: 'Cannot post to reader'}));
-        return;
+    respondToIDsQuery(mission, response, limit);
+  } else if (requestQuery.pathname.search("/data") > 0) {
+    let mission = requestQuery.pathname.substring(
+      1,
+      requestQuery.pathname.search("/data")
+    );
+
+    if (!/^\d+$/.test(mission)) {
+      response.writeHead(400);
+      response.end("Wrong mission provided");
+      return;
     }
 
-
-    let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
-    console.log(requestQuery.search);
-    if(requestQuery.pathname.search('/index') > 0) {
-
-        let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/index'));
-
-        if (!/^\d+$/.test(mission)) {
-            response.writeHead(400);
-            response.end('Wrong mission provided' );
-            return;
-        }
-
-        respondToIDsQuery(mission, response);
-
-    } else if (requestQuery.pathname.search('/data') > 0) {
-
-        let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/data'));
-
-        if (!/^\d+$/.test(mission)) {
-            response.writeHead(400);
-            response.end('Wrong mission provided');
-            return;
-        }
-
-        let timestamps = requestQuery.searchParams.getAll('timestamps');
-        respondToTransmissionsQuery(mission, timestamps, response);
-
-    } else {
-        response.writeHead(400);
-        response.end(JSON.stringify({error: 'Cannot do whatever youre doing to reader'}));
-        return;
-    }
+    let timestamps = requestQuery.searchParams.getAll("timestamps");
+    respondToTransmissionsQuery(mission, timestamps, response);
+  } else {
+    response.writeHead(400);
+    response.end(
+      JSON.stringify({ error: "Cannot do whatever youre doing to reader" })
+    );
+    return;
+  }
 }
 
-function respondToIDsQuery(mission, response) {
+function respondToIDsQuery(mission, response, limit) {
+  influxConnection
+    .then(influx => {
+      if (keys.length === 0) {
+        response.end(JSON.stringify({}));
+        return null;
+      }
 
-    influxConnection.then(influx => {
+      let query = `select * from `;
+      let namesString = keys.join(",");
 
-        if (keys.length === 0) {
-            response.end(JSON.stringify({}));
-            return null;
-        }
+      query += namesString;
+      query += ` where mission = '${mission}'`;
 
-        let query = `select * from `;
-        let namesString = keys.join(',');
-        query += namesString;
-        query += ` where mission = '${mission}'`;
-        console.log(query);
-        return influx.query(query);
+      if (limit) {
+        query += ` LIMIT ${limit}`;
+      }
 
-    }).then(result => {
+      console.log(query);
+      return influx.query(query);
+    })
+    .then(result => {
+      let ids = [];
+      let idsPushed = new Set();
 
-        let ids = [];
-        let idsPushed = new Set();
+      if (result !== null) {
+        result.forEach(measure => {
+          if (!idsPushed.has(measure.id)) {
+            ids.push([measure.id, measure.time._nanoISO]);
+            idsPushed.add(measure).id;
+          }
+        });
+      }
+      let resp = { index: ids };
+      response.end(JSON.stringify(resp));
+    })
+    .catch(function(err) {
+      console.error(`Error querying data from InfluxDB! ${err.stack}`);
+      console.error(err);
 
-        if (result !== null) {
-            result.forEach(measure => {
-                if (!idsPushed.has(measure.id)) {
-                    ids.push([measure.id, measure.time._nanoISO]);
-                    idsPushed.add(measure).id;
-                }
-            });
-        }
-        let resp = {'index': ids};
-        response.end(JSON.stringify(resp));
-
-    }).catch(function (err) {
-        console.error(`Error querying data from InfluxDB! ${err.stack}`);
-        console.error(err);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: err.message}));
+      response.writeHead(500);
+      response.end(JSON.stringify({ error: err.message }));
     });
 }
 
-function respondToTransmissionsQuery(mission, timestamps, response) {  // by time instead of id
+function respondToTransmissionsQuery(mission, timestamps, response) {
+  // by time instead of id
 
-    influxConnection.then(influx => {
+  influxConnection
+    .then(influx => {
+      if (keys.length === 0) {
+        response.end(JSON.stringify({}));
+        return null;
+      }
 
-        if (keys.length === 0) {
-            response.end(JSON.stringify({}));
-            return null;
-        }
+      if (
+        !/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(
+          timestamps
+        )
+      ) {
+        response.writeHead(400);
+        response.end("Wrong timestamps provided");
+        return;
+      }
+      let timestamp = timestamps[0];
 
-        if (!/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(timestamps)) {
-            response.writeHead(400);
-            response.end('Wrong timestamps provided');
-            return;
-        }
-        let timestamp = timestamps[0];
+      let query = `select * from `;
+      let namesString = keys.join(",");
+      query += namesString;
+      query += ` where mission = '${mission}' and time >= '${timestamp.substring(
+        0,
+        timestamp.search(",")
+      )}' and time <= '${timestamp.substring(timestamp.search(",") + 1)}'`;
+      console.log(query);
 
-        let query = `select * from `;
-        let namesString = keys.join(',');
-        query += namesString;
-        query += ` where mission = '${mission}' and time >= '${timestamp.substring(0,timestamp.search(','))}' and time <= '${timestamp.substring(timestamp.search(',')+1)}'`;
-        console.log(query);
+      return influx.query(query);
+    })
+    .then(result => {
+      let transmissions = {};
 
-        return influx.query(query);
+      result.groupRows.forEach(group => {
+        const name = group.name;
 
-    }).then(result => {
-        let transmissions = {};
+        group.rows.forEach(point => {
+          if (!transmissions[point.id]) {
+            transmissions[point.id] = {
+              "Human Time": point.time._nanoISO,
+              mission: Number(mission),
+              timestamp: new Date(point.time._nanoISO).valueOf(),
+              id: point.id
+            };
+          }
 
-        result.groupRows.forEach((group) => {
-            const name = group.name;
-
-            group.rows.forEach((point) => {
-                if (!transmissions[point.id]) {
-                    transmissions[point.id] = {
-                        'Human Time':point.time._nanoISO,
-                        mission : Number(mission),
-                        'timestamp' : new Date(point.time._nanoISO).valueOf(),
-                        id : point.id
-                    };
-                }
-
-                transmissions[point.id][name] = point.value;
-            })
+          transmissions[point.id][name] = point.value;
         });
+      });
 
-        response.setHeader("Content-Type", 'application/json');
+      response.setHeader("Content-Type", "application/json");
 
-        response.end(JSON.stringify(Object.values(transmissions)));
+      response.end(JSON.stringify(Object.values(transmissions)));
+    })
+    .catch(function(err) {
+      console.error(`Error querying data from InfluxDB! ${err.stack}`);
 
-    }).catch(function (err) {
-        console.error(`Error querying data from InfluxDB! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: err.message}));
+      response.writeHead(500);
+      response.end(JSON.stringify({ error: err.message }));
     });
 }
 
 function connectToWriter() {
-    const timestamp = new Date().valueOf();
-    const signature = validate.sign(timestamp);
+  const timestamp = new Date().valueOf();
+  const signature = validate.sign(timestamp);
 
-    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');
+  const ws = new WebSocket(
+    process.env.WRITER_URL + "/" + timestamp + "/" + signature + "/listen"
+  );
 
-    let closeTimeout = null;
+  let closeTimeout = null;
 
-    ws.on('error', function (err) {
-        // close event will trigger a reconnect
+  ws.on("error", function(err) {
+    // close event will trigger a reconnect
+    ws.close();
+    console.log("Writer error: " + err);
+  });
+
+  // reconnect on close
+  ws.on("close", function() {
+    console.log("Writer closed");
+
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+    }
+
+    setTimeout(connectToWriter, 500);
+  });
+
+  ws.on("message", function(message) {
+    // heartbeat
+    if (/^\d+$/.test(message)) {
+      console.log("Heartbeat");
+
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+      }
+
+      closeTimeout = setTimeout(function() {
+        console.log("No heartbeat, closing");
         ws.close();
-        console.log('Writer error: ' + err);
-    });
+      }, CLOSE_TIMEOUT);
 
-    // reconnect on close
-    ws.on('close', function () {
-        console.log('Writer closed');
+      return;
+    }
 
-        if (closeTimeout) {
-            clearTimeout(closeTimeout);
-        }
-
-        setTimeout(connectToWriter, 500);
-    });
-
-    ws.on('message', function (message) {
-
-        // heartbeat
-        if (/^\d+$/.test(message)) {
-            console.log('Heartbeat');
-
-            if (closeTimeout) {
-                clearTimeout(closeTimeout);
-            }
-
-            closeTimeout = setTimeout(function () {
-                console.log('No heartbeat, closing');
-                ws.close();
-            }, CLOSE_TIMEOUT);
-
-            return;
-        }
-
-        handlePoint(JSON.parse(message));
-    });
+    handlePoint(JSON.parse(message));
+  });
 }
 
 /*
  * Takes a partial point from the HTTP connection, parses it, and stores it until it's ready to be sent on
  */
 function handlePoint(point) {
-    // if the timestamp is old, ignore the point
-    if (point.timestamp < new Date().valueOf() - MAX_RECENCY*1000) {
-        return;
+  // if the timestamp is old, ignore the point
+  if (point.timestamp < new Date().valueOf() - MAX_RECENCY * 1000) {
+    return;
+  }
+
+  for (let key in point) {
+    if (!point.hasOwnProperty(key) || keys.includes(key)) {
+      continue;
+    }
+    if (key == "id" || key == "timestamp" || key == "mission") {
+      continue;
+    }
+    keys.push(key);
+  }
+
+  console.log("nasanov-reader full point");
+
+  WSS.clients.forEach(function each(client) {
+    if (client.readyState !== WebSocket.OPEN) {
+      return;
     }
 
-    for (let key in point) {
-        if (!point.hasOwnProperty(key) || keys.includes(key)) {
-            continue;
-        }
-        if (key == 'id' || key == 'timestamp' || key == 'mission') {
-            continue;
-        }
-        keys.push(key);
-    }
-
-    console.log('nasanov-reader full point');
-
-    WSS.clients.forEach(function each(client) {
-        if (client.readyState !== WebSocket.OPEN) {
-            return;
-        }
-
-        client.send(JSON.stringify(point));
-    });
+    client.send(JSON.stringify(point));
+  });
 }
 
 module.exports = {
-    init: init
+  init: init
 };
