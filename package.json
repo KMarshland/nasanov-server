@@ -28,7 +28,6 @@
   "license": "MIT",
   "dependencies": {
     "influx": "^5.0.7",
-    "newrelic": "^5.1.0",
     "node-fetch": "^2.3.0",
     "node-uuid": "^1.4.8",
     "ws": "^3.1.0"
