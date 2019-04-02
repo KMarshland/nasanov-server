@@ -2,20 +2,21 @@
   "name": "nasonov-server",
   "version": "1.0.0",
   "description": "Servers for ingesting and distributing rf transmissions",
-  "node": "8.4",
+  "node": "10.15.3",
   "engines": {
-    "node": ">=8.4"
+    "node": ">=10.0.0"
   },
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
     "writer": "MODE=writer PORT=5240 node main.js",
-    "reader": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 nodemon main.js",
-    "writer-dev": "MODE=writer PORT=5240 node main.js",
-    "reader-dev": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 nodemon main.js",
+    "reader": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 node main.js",
+    "writer-watched": "MODE=writer PORT=5240 nodemon main.js",
+    "reader-watched": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 nodemon main.js",
     "tester": "node test.js",
     "influx": "influxd",
-    "serve": "NASANOV_SECRET=yikes foreman start -f Procfile.serve",
+    "serve": "NASANOV_SECRET=yikes WATCH='' foreman start -f Procfile.serve",
+    "serve-watched": "NASANOV_SECRET=yikes WATCH=TRUE foreman start -f Procfile.serve",
     "test": "NASANOV_SECRET=yikes foreman start -f Procfile.test",
     "test-prod": "USE_PROD=TRUE node test.js",
     "prod-connected": "node test_prod_connected.js",

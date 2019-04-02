@@ -20,7 +20,9 @@ function init(server) {
     const wss = new WebSocket.Server({ server });
 
     WSS = wss;
-    wss.on('connection', function connected(ws, req) {});
+    wss.on('connection', (ws) => {
+        ws.on('error', console.error);
+    });
 
     influxConnection.then(influx =>
         influx.getMeasurements()
@@ -42,18 +44,18 @@ function connectToWriter() {
     const timestamp = new Date().valueOf();
     const signature = validate.sign(timestamp);
 
-    const ws = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');
+    const writerWS = new WebSocket(process.env.WRITER_URL + '/' + timestamp + '/' + signature + '/listen');
 
     let closeTimeout = null;
 
-    ws.on('error', function (err) {
+    writerWS.on('error', function (err) {
         // close event will trigger a reconnect
-        ws.close();
+        writerWS.close();
         console.log('Writer error: ' + err);
     });
 
     // reconnect on close
-    ws.on('close', function () {
+    writerWS.on('close', function () {
         console.log('Writer closed');
 
         if (closeTimeout) {
@@ -63,7 +65,7 @@ function connectToWriter() {
         setTimeout(connectToWriter, 500);
     });
 
-    ws.on('message', function (message) {
+    writerWS.on('message', function (message) {
 
         // heartbeat
         if (/^\d+$/.test(message)) {
@@ -75,7 +77,7 @@ function connectToWriter() {
 
             closeTimeout = setTimeout(function () {
                 console.log('No heartbeat, closing');
-                ws.close();
+                writerWS.close();
             }, CLOSE_TIMEOUT);
 
             return;

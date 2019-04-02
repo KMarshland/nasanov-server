@@ -1,3 +1,3 @@
 influx: npm run influx
-writer: npm run writer-dev
-reader: npm run reader-dev
+writer: if [[ $WATCH ]]; then npm run writer-watched; else npm run writer; fi
+reader: if [[ $WATCH ]]; then npm run reader-watched; else npm run reader; fi
