@@ -5,9 +5,9 @@ const ACCEPTABLE_LATENCY = 1000; // ms it accepts for latency between transmissi
 const KEY_COUNT = 20; // random keys to add to the transmission for benchmarking
 const MISSION = 1;
 
-const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.herokuapp.com' : 'ws://localhost:5240';
-const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.herokuapp.com' : 'ws://localhost:5250';
-const READER_URL_HTTP = process.env.USE_PROD == 'TRUE' ? 'http://nasonov-reader.herokuapp.com' : 'http://localhost:5250';
+const WRITER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-writer.stanfordssi.org' : 'ws://localhost:5240';
+const READER_URL = process.env.USE_PROD == 'TRUE' ? 'wss://nasonov-reader.stanfordssi.org' : 'ws://localhost:5250';
+const READER_URL_HTTP = process.env.USE_PROD == 'TRUE' ? 'http://nasonov-reader.stanfordssi.org' : 'http://localhost:5250';
 
 
 const WebSocket = require('ws');
