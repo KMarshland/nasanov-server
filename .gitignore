@@ -27,3 +27,5 @@ translations
 setenv.sh
 
 nasonov-server.iml
+
+newrelic_agent.log
