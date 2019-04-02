@@ -69,7 +69,7 @@ function respondToHTTPReq(request, response) {
             return;
         }
 
-        let timestamps = requestQuery.searchParams.getAll('timestamps[]');
+        let timestamps = requestQuery.searchParams.getAll('timestamps');
         respondToTransmissionsQuery(mission, timestamps, response);
 
     } else {
@@ -129,66 +129,40 @@ function respondToTransmissionsQuery(mission, timestamps, response) {  // by tim
             return null;
         }
 
-        let queries = [];
-        timestamps.forEach(timestamp => {
+        if (!/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(timestamps)) {
+            response.writeHead(400);
+            response.end('Wrong timestamps provided');
+            return;
+        }
+        let timestamp = timestamps[0];
 
-            if (!/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(timestamp)) {
-                response.writeHead(400);
-                response.end('Wrong timestamps provided');
-                return;
-            }
+        let query = `select * from `;
+        let namesString = keys.join(',');
+        query += namesString;
+        query += ` where mission = '${mission}' and time >= '${timestamp.substring(0,timestamp.search(','))}' and time <= '${timestamp.substring(timestamp.search(',')+1)}'`;
+        console.log(query);
 
-            let query = `select * from `;
-            let namesString = keys.join(',');
-            query += namesString;
-            query += ` where mission = '${mission}' and time >= '${timestamp.substring(0,timestamp.search(','))}' and time <= '${timestamp.substring(timestamp.search(',')+1)}'`;
-            console.log(query);
-
-            queries.push(query);
-        });
-
-        return influx.query(queries);
+        return influx.query(query);
 
     }).then(result => {
         let transmissions = {};
 
-        if (Array.isArray(result[0])) {
-            result.forEach(timeGroup => {
-                timeGroup.groupRows.forEach((group) => {
-                    const name = group.name;
+        result.groupRows.forEach((group) => {
+            const name = group.name;
 
-                    group.rows.forEach((point) => {
-                        if (!transmissions[point.id]) {
-                            transmissions[point.id] = {
-                                'Human Time': point.time._nanoISO,
-                                mission : Number(mission),
-                                timestamp : new Date(point.time._nanoISO).valueOf(),
-                                id : point.id
-                            };
-                        }
+            group.rows.forEach((point) => {
+                if (!transmissions[point.id]) {
+                    transmissions[point.id] = {
+                        'Human Time':point.time._nanoISO,
+                        mission : Number(mission),
+                        'timestamp' : new Date(point.time._nanoISO).valueOf(),
+                        id : point.id
+                    };
+                }
 
-                        transmissions[point.id][name] = point.value;
-                    })
-                });
-            });
-        } else {
-            result.groupRows.forEach((group) => {
-                const name = group.name;
-
-                group.rows.forEach((point) => {
-                    if (!transmissions[point.id]) {
-                        transmissions[point.id] = {
-                            'Human Time':point.time._nanoISO,
-                            mission : Number(mission),
-                            'timestamp' : new Date(point.time._nanoISO).valueOf(),
-                            id : point.id
-                        };
-                    }
-
-                    transmissions[point.id][name] = point.value;
-                })
-            });
-        }
+                transmissions[point.id][name] = point.value;
+            })
+        });
 
         response.setHeader("Content-Type", 'application/json');
 
