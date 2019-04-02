@@ -117,6 +117,16 @@ function handlePoint(point) {
     });
 }
 
+/**
+ * Gets the list of measurements
+ *
+ * @return {Array}
+ */
+function getKeys() {
+    return keys;
+}
+
 module.exports = {
-    init: init
+    init,
+    getKeys: getKeys
 };

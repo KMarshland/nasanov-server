@@ -10,7 +10,6 @@ if (process.env.MODE == 'writer') {
     source = './writer.js';
     server = require(source);
     server.init();
-
 } else {
     source = './reader.js';
     const http = require('http');

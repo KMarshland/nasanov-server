@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node main.js",
     "writer": "MODE=writer PORT=5240 node main.js",
-    "reader": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 node main.js",
+    "reader": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 nodemon main.js",
+    "writer-dev": "MODE=writer PORT=5240 node main.js",
+    "reader-dev": "MODE=reader PORT=5250 WRITER_URL=ws://localhost:5240 nodemon main.js",
     "tester": "node test.js",
     "influx": "influxd",
     "serve": "NASANOV_SECRET=yikes foreman start -f Procfile.serve",

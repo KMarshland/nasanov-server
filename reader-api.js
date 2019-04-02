@@ -1,6 +1,10 @@
 const influxConnection = require('./influx.js');
 
-let keys = [];
+// circular dependency, so we have to wait a hot sec to get a reference to getKeys
+let getKeys = () => [];
+setTimeout(() => {
+    getKeys = require('./reader.js').getKeys;
+});
 
 /**
  * Base handler of all HTTP requests
@@ -20,143 +24,263 @@ function handleHTTPRequest(request, response) {
     }
 
     if (request.method !== 'GET') {
-        response.writeHead(400);
-        response.end(JSON.stringify({
-            error: 'Cannot post to reader'
-        }));
+        handleClientError(response, 'Can only accept GET and OPTIONS requests');
         return;
     }
-
 
     let requestQuery = new URL(request.url, 'https://habmc.stanfordssi.org/');
     console.log(requestQuery.search);
-    if(requestQuery.pathname.search('/index') > 0) {
 
-        let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/index'));
+    if (/^\/missions\/[^/]+\/index(.json)?$/.test(requestQuery.pathname)) {
+        return handleIndexQuery(requestQuery, response);
+    }
 
-        if (!/^\d+$/.test(mission)) {
-            response.writeHead(400);
-            response.end('Wrong mission provided' );
-            return;
-        }
+    if (/^\/missions\/[^/]+\/data(.json)?$/.test(requestQuery.pathname)) {
+        return handleDataFetchQuery(requestQuery, response);
+    }
 
-        findIndex(mission, response);
+    console.log(requestQuery.pathname);
+    handleClientError(response, 'Method not found', 404)
+}
 
-    } else if (requestQuery.pathname.search('/data') > 0) {
 
-        let mission = requestQuery.pathname.substring(1, requestQuery.pathname.search('/data'));
+/*
+ *********************************
+ *
+ * Helper functions for responses
+ *
+ *********************************
+ */
 
-        if (!/^\d+$/.test(mission)) {
-            response.writeHead(400);
-            response.end('Wrong mission provided');
-            return;
-        }
+/**
+ * Responds with status code 400
+ *
+ * @param response
+ * @param {String} reason
+ * @param {Number} code
+ */
+function handleClientError(response, reason, code=400) {
+    response.writeHead(code);
+    response.end(JSON.stringify({
+        error: reason
+    }));
+}
 
-        let timestamps = requestQuery.searchParams.getAll('timestamps');
-        respondToTransmissionsQuery(mission, timestamps, response);
+/**
+ * Responds to a server error with status code 500
+ *
+ * @param response
+ * @param {Error} error
+ */
+function handleInternalError(response, error) {
+    console.error(error);
+    console.error(error.message);
+    console.error(error.stack);
 
-    } else {
-        response.writeHead(400);
-        response.end(JSON.stringify({error: 'Cannot do whatever youre doing to reader'}));
+    response.writeHead(500);
+    response.end(JSON.stringify({
+        error: 'Internal server error'
+    }));
+}
+
+/**
+ * Helper to return a JSON response neatly
+ *
+ * @param response
+ * @param {Object} jsonObject
+ */
+function respondWithJSON(response, jsonObject) {
+    response.setHeader('Content-Type', 'application/json');
+    response.writeHead(200);
+    response.end(JSON.stringify(jsonObject));
+}
+
+/*
+ *******************
+ *
+ * Specific actions
+ *
+ *******************
+ */
+
+/**
+ * Handles GET requests of format /missions/MISSION_ID/index
+ *
+ * @param requestQuery
+ * @param response
+ */
+function handleIndexQuery(requestQuery, response) {
+    const parameters = extractParameters(requestQuery);
+
+    if (!/^\d+$/.test(parameters.mission)) {
+        handleClientError(response, 'Invalid mission id');
         return;
     }
-}
 
-function findIndex(mission, response) {
-
-    influxConnection.then(influx => {
-
-        if (keys.length === 0) {
-            response.end(JSON.stringify({}));
-            return null;
-        }
-
-        let query = `select * from `;
-        let namesString = keys.join(',');
-        query += namesString;
-        query += ` where mission = '${mission}'`;
-        console.log(query);
-        return influx.query(query);
-
-    }).then(result => {
-
-        let ids = [];
-        let idsPushed = new Set();
-
-        if (result !== null) {
-            result.forEach(measure => {
-                if (!idsPushed.has(measure.id)) {
-                    ids.push([measure.id, measure.time._nanoISO]);
-                    idsPushed.add(measure).id;
-                }
-            });
-        }
-        let resp = {'index': ids};
-        response.end(JSON.stringify(resp));
-
-    }).catch(function (err) {
-        console.error(`Error querying data from InfluxDB! ${err.stack}`);
-        console.error(err);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: err.message}));
-    });
-}
-
-function respondToTransmissionsQuery(mission, timestamps, response) {  // by time instead of id
-
-    influxConnection.then(influx => {
-
-        if (keys.length === 0) {
-            response.end(JSON.stringify({}));
-            return null;
-        }
-
-        if (!/^(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))^/.test(timestamps)) {
-            response.writeHead(400);
-            response.end('Wrong timestamps provided');
-            return;
-        }
-        let timestamp = timestamps[0];
-
-        let query = `select * from `;
-        let namesString = keys.join(',');
-        query += namesString;
-        query += ` where mission = '${mission}' and time >= '${timestamp.substring(0,timestamp.search(','))}' and time <= '${timestamp.substring(timestamp.search(',')+1)}'`;
-        console.log(query);
-
-        return influx.query(query);
-
-    }).then(result => {
-        let transmissions = {};
-
-        result.groupRows.forEach((group) => {
-            const name = group.name;
-
-            group.rows.forEach((point) => {
-                if (!transmissions[point.id]) {
-                    transmissions[point.id] = {
-                        'Human Time':point.time._nanoISO,
-                        mission : Number(mission),
-                        'timestamp' : new Date(point.time._nanoISO).valueOf(),
-                        id : point.id
-                    };
-                }
-
-                transmissions[point.id][name] = point.value;
-            })
+    findIndex(parameters).then((index) => {
+        respondWithJSON(response, {
+            mission: parameters.mission,
+            index
         });
-
-        response.setHeader("Content-Type", 'application/json');
-
-        response.end(JSON.stringify(Object.values(transmissions)));
-
-    }).catch(function (err) {
-        console.error(`Error querying data from InfluxDB! ${err.stack}`);
-
-        response.writeHead(500);
-        response.end(JSON.stringify({error: err.message}));
+    }).catch((error) => {
+        handleInternalError(response, error);
     });
+}
+
+/**
+ * Handles GET requests of format /missions/MISSION_ID/data
+ *
+ * @param requestQuery
+ * @param response
+ */
+function handleDataFetchQuery(requestQuery, response) {
+    const params = extractParameters(requestQuery);
+
+    if (!/^\d+$/.test(params.mission)) {
+        handleClientError(response, 'Invalid mission id');
+        return;
+    }
+
+    params.minTime = new Date(requestQuery.searchParams.get('minTime') || new Date(0));
+    params.maxTime = new Date(requestQuery.searchParams.get('maxTime') || new Date());
+
+    findData(params).then((data) => {
+        respondWithJSON(response, {
+            params: params,
+            data
+        });
+    }).catch((error) => {
+        handleInternalError(response, error);
+    });
+}
+
+/*
+ *****************************
+ *
+ * Helper methods for actions
+ *
+ *****************************
+ */
+
+/**
+ * Returns the mission id and other common properties from the request query
+ *
+ * @param requestQuery
+ * @return {{mission: string, limit: number, offset: number}}
+ */
+function extractParameters(requestQuery) {
+    const mission = requestQuery.pathname.match(/missions\/([^/]+)\//)[1];
+    const limit = requestQuery.searchParams.get('limit') || 0;
+    const offset = requestQuery.searchParams.get('offset') || 0;
+
+    return {
+        mission,
+        limit,
+        offset
+    };
+}
+
+/**
+ * Finds the index of transmissions for the given mission
+ *
+ * @param {String} mission
+ * @param {Number} [limit]
+ * @param {Number} [offset]
+ * @return {Promise<Array>}
+ */
+async function findIndex({ mission, limit, offset}) {
+
+    const influx = await influxConnection;
+
+    if (getKeys().length === 0) {
+        return [];
+    }
+
+    let query = `SELECT "value","id" FROM ${getKeys().join(',')} WHERE mission = '${mission}'`;
+
+    if (limit) {
+        query += ` LIMIT ${limit}`;
+    }
+
+    if (offset) {
+        query += ` OFFSET ${offset}`;
+    }
+
+    console.log(query);
+
+    const result = await influx.query(query);
+
+    if (result === null) {
+        return [];
+    }
+
+    let index = [];
+    let registeredIds = new Set();
+
+    for (let measurement of result) {
+        if (registeredIds.has(measurement.id)) {
+            continue;
+        }
+
+        index.push([measurement.id, measurement.time._nanoISO]);
+        registeredIds.add(measurement.id);
+    }
+
+    return index;
+}
+
+/**
+ * Fetches the transmission data for the given parameters
+ *
+ * @param {String} mission
+ * @param {Date} minTime
+ * @param {Date} maxTime
+ * @param {Number} [limit]
+ * @param {Number} [offset]
+ * @return {Promise<Array>}
+ */
+async function findData({ mission, minTime, maxTime, limit, offset}) {
+
+    const influx = await influxConnection;
+
+    if (getKeys().length === 0) {
+        return [];
+    }
+
+    let query = `SELECT * FROM ${getKeys().join(',')} WHERE mission='${mission}' AND time >= '${minTime.toISOString()}' AND time <= '${maxTime.toISOString()}'`;
+
+    if (limit) {
+        query += ` LIMIT ${limit}`;
+    }
+
+    if (offset) {
+        query += ` OFFSET ${offset}`;
+    }
+
+    console.log(query);
+
+    const result = await influx.query(query);
+
+    let transmissions = {};
+
+    result.groupRows.forEach((group) => {
+        const name = group.name;
+
+        group.rows.forEach((point) => {
+            if (!transmissions[point.id]) {
+                transmissions[point.id] = {
+                    'Human Time': point.time._nanoISO,
+                    mission: Number(mission),
+                    timestamp: new Date(point.time._nanoISO).valueOf(),
+                    id: point.id
+                };
+            }
+
+            transmissions[point.id][name] = point.value;
+        })
+    });
+
+    return Object.values(transmissions);
 }
 
 module.exports = {
