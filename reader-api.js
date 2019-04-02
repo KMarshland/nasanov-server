@@ -196,7 +196,7 @@ async function findIndex({ mission, limit, offset}) {
         return [];
     }
 
-    let query = `SELECT "value","id" FROM ${getKeys().join(',')} WHERE mission = '${mission}'`;
+    let query = `SELECT "value","id" FROM ${getKeys().join(',')} WHERE mission = '${mission}' ORDER BY DESC`;
 
     if (limit) {
         query += ` LIMIT ${limit}`;
@@ -226,7 +226,11 @@ async function findIndex({ mission, limit, offset}) {
         registeredIds.add(measurement.id);
     }
 
-    return index;
+    if (limit) {
+        index = index.slice(0, limit);
+    }
+
+    return index.reverse();
 }
 
 /**
@@ -247,7 +251,7 @@ async function findData({ mission, minTime, maxTime, limit, offset}) {
         return [];
     }
 
-    let query = `SELECT * FROM ${getKeys().join(',')} WHERE mission='${mission}' AND time >= '${minTime.toISOString()}' AND time <= '${maxTime.toISOString()}'`;
+    let query = `SELECT * FROM ${getKeys().join(',')} WHERE mission='${mission}' AND time >= '${minTime.toISOString()}' AND time <= '${maxTime.toISOString()}' ORDER BY DESC`;
 
     if (limit) {
         query += ` LIMIT ${limit}`;
@@ -280,7 +284,12 @@ async function findData({ mission, minTime, maxTime, limit, offset}) {
         })
     });
 
-    return Object.values(transmissions);
+    let data = Object.values(transmissions);
+    if (limit) {
+        data = data.slice(0, limit);
+    }
+
+    return data.reverse();
 }
 
 module.exports = {
