@@ -5,6 +5,11 @@
 let source;
 let server;
 
+process.on('uncaughtException', function (err) {
+    console.error(err.stack);
+    console.log("Node NOT Exiting...");
+});
+
 if (process.env.MODE == 'writer') {
     source = './writer.js';
     server = require(source);
