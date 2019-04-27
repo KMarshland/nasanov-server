@@ -90,6 +90,12 @@ function handleMessage(message, ws) {
             continue;
         }
 
+        const value = data[key.toLowerCase().replace(/\s+/g, '_')];
+
+        if (typeof value !== 'number') {
+            continue;
+        }
+
         points.push({
             measurement: key,
             tags: {
@@ -97,7 +103,7 @@ function handleMessage(message, ws) {
                 id: id
             },
             fields: {
-                value: data[key.toLowerCase().replace(/\s+/g, '_')]
+                value
             },
             timestamp: timestamp
         });
